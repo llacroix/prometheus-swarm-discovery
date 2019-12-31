@@ -9,9 +9,10 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-docker_url='unix:///var/run/docker.sock'
+docker_url = "unix:///var/run/docker.sock"
 
-label_template = 'prometheus.labels.'
+label_template = "prometheus.labels."
+
 
 async def load_existing_services(docker):
     services = await docker.services.list()
@@ -21,17 +22,17 @@ async def load_existing_services(docker):
     for service in services:
         labels = service["Spec"]["Labels"]
 
-        enabled_label = labels.get('prometheus.enable')
-        network_label = labels.get('prometheus.network')
-        port_label = labels.get('prometheus.port', '80')
-        job_label = labels.get('prometheus.job')
-        
+        enabled_label = labels.get("prometheus.enable")
+        network_label = labels.get("prometheus.network")
+        port_label = labels.get("prometheus.port", "80")
+        job_label = labels.get("prometheus.job", service["Spec"]["Name"])
+
         discovery_labels = {
-            "job": service['Spec']['Name'],
+            "job": job_label,
         }
 
         service_labels = {
-            key.replace(label_template, ''): value
+            key.replace(label_template, ""): value
             for key, value in labels.items()
             if key.startswith(label_template)
         }
@@ -40,7 +41,7 @@ async def load_existing_services(docker):
 
         filters = {
             "desired-state": "running",
-            "service": service['Spec']['Name'],
+            "service": service["Spec"]["Name"],
         }
 
         if not enabled_label:
@@ -49,10 +50,14 @@ async def load_existing_services(docker):
         tasks = await docker.tasks.list(filters=filters)
 
         for task in tasks:
-            container_id = task['Status']['ContainerStatus']['ContainerID']
+            if "ContainerStatus" not in task["Status"]:
+                # Task probably stopped while this was getting fetched
+                continue
+
+            container_id = task["Status"]["ContainerStatus"]["ContainerID"]
             container = await docker.containers.get(container_id)
 
-            networks = container._container['NetworkSettings']['Networks']
+            networks = container._container["NetworkSettings"]["Networks"]
 
             if not network_label:
                 if len(networks.keys()) > 1:
@@ -60,67 +65,72 @@ async def load_existing_services(docker):
                 else:
                     network_label = list(networks.keys())[0]
 
-            ip_address = networks[network_label]['IPAddress']
+            ip_address = networks[network_label]["IPAddress"]
 
             url = "%s:%s" % (ip_address, port_label)
 
-            config = {
-                "labels": discovery_labels,
-                "targets": [url]
-            }
+            config = {"labels": discovery_labels, "targets": [url]}
 
             configs.append(config)
 
     return configs
 
+
 async def save_configs(options):
     """
     Save a configuration based on fetched configs from docker
     """
-    docker = aiodocker.Docker(url=options.host)
-    configs = await load_existing_services(docker)
+    try:
+        docker = aiodocker.Docker(url=options.host)
+        configs = await load_existing_services(docker)
 
-    logger.info("Configuration updated in %s" % (options.out))
+        logger.info("Configuration updated in %s" % (options.out))
 
-    async with AIOFile(options.out, 'w') as afp:
-        logger.debug(configs)
-        await afp.write(json.dumps(configs))
+        async with AIOFile(options.out, "w") as afp:
+            logger.debug(configs)
+            await afp.write(json.dumps(configs))
+    except Exception as exc:
+        logger.error(exc)
+    finally:
+        await docker.close()
 
-    await docker.close()
 
 async def listen_events(output):
     """
-    Listen for events and recreate the config whenever a container start or stop
+    Listen for events and recreate the config whenever a container start/stop
     """
     docker = aiodocker.Docker(url=options.host)
     subscriber = docker.events.subscribe()
 
     logger.info("Listening for docker events")
+    try:
+        states = ["start", "stop"]
+        while True:
+            event = await subscriber.get()
 
-    while True:
-        event = await subscriber.get()
+            if event["Type"] == "container" and event["status"] in states:
+                save_config_task = loop.create_task(save_configs(options))
+                done, pending = await asyncio.wait([save_config_task])
+                logger.debug("Save config and event tasks completed")
+    except Exception as exc:
+        logger.error(exc)
+    finally:
+        await docker.close()
 
-        if (
-            event['Type'] in ['container'] and
-            event['status'] in ['start', 'stop']
-        ):
-            save_config_task = loop.create_task(save_configs(options))
-            done, pending = await asyncio.wait([save_config_task])
-            logger.debug("Save config and event tasks completed")
-
-    await docker.close()
 
 async def main_loop(options, args):
     """
     Main loop for service discovery.
 
     Infinite loop running 2 tasks.
-    
-    1. First task save the current configuration
-    2. Wait for events and on each event, rewrite the configuration the same way 1 does.
 
-    If for some reasons, all task are completed start again. This could happen if the event
-    socket times out or for any other reason why step 1 and step 2 completes with an exception
+    1. First task save the current configuration
+    2. Wait for events and on each event, rewrite the configuration the
+       same way 1 does.
+
+    If for some reasons, all task are completed start again. This could
+    happen if the event socket times out or for any other reason why step 1
+    and step 2 completes with an exception
 
     In a perfect world, it should not loop more than 1 time.
     """
@@ -129,13 +139,18 @@ async def main_loop(options, args):
         save_config_task = loop.create_task(save_configs(options))
         read_events_task = loop.create_task(listen_events(options))
 
-        done, pending = await asyncio.wait([save_config_task, read_events_task])
+        done, pending = await asyncio.wait(
+            [save_config_task, read_events_task]
+        )
+
 
 def setup_logging(options):
     level = logging.getLevelName(options.log_level)
     logger.setLevel(level)
 
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
 
     if not options.log_file:
         handler = logging.StreamHandler(sys.stdout)
@@ -145,12 +160,15 @@ def setup_logging(options):
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     parser = OptionParser()
-    parser.add_option('-o', '--out', dest="out", help="Output File")
-    parser.add_option('--host', dest="host", help="Docker Host/Socket", default=docker_url)
-    parser.add_option('--log-level', dest='log_level', default='INFO')
-    parser.add_option('--log-file', dest='log_file', default=None)
+    parser.add_option("-o", "--out", dest="out", help="Output File")
+    parser.add_option(
+        "--host", dest="host", default=docker_url, help="Docker Host/Socket",
+    )
+    parser.add_option("--log-level", dest="log_level", default="INFO")
+    parser.add_option("--log-file", dest="log_file", default=None)
 
     (options, args) = parser.parse_args()
 
