@@ -46,3 +46,18 @@ Label name            |  Label Value
 `prometheus.job`      | by default the name of the service
 `prometheus.network`  | network to expose
 `prometheus.labels.*` | Any label starting with this is feeded to the `file_sd_config`
+
+
+New format (inspired by traefik)
+
+Label name                               | Label Value
+-----------------------------------------|----------------------------------------------------------------
+`prometheus.enable`                      | true or false
+`prometheus.targets.<job>.networks`      | networks to get ips from (optional if on one network) unused if host specified
+`prometheus.targets.<job>.scheme`        | set `__scheme__` on the current target instance (optional)
+`prometheus.targets.<job>.host`          | If present use this as target host instead of ips of current service
+`prometheus.targets.<job>.port`          | port default to (optional) (default: 80)
+`prometheus.targets.<job>.path`          | set `__metrics_path__` on the current target job (optional)
+`prometheus.targets.<job>.labels.<key>`  | key/value of labels for the job (optional)
+
+One docker service can be used to discover unrelated services
