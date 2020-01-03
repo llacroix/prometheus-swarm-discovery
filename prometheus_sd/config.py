@@ -65,6 +65,34 @@ def get_parser():
     parser.add_option("--log-file", dest="log_file", default=None)
     parser.add_option("--only-enabled", dest="only_enabled", default=True)
 
+    parser.add_option(
+        "--meta-labels",
+        action="store_true",
+        dest="use_meta_labels",
+        default=False
+    )
+
+    parser.add_option(
+        "--service-labels",
+        action="store_true",
+        dest="service_labels",
+        default=False
+    )
+
+    parser.add_option(
+        "--container-labels",
+        action="store_true",
+        dest="container_labels",
+        default=False
+    )
+
+    parser.add_option(
+        "--task-labels",
+        action="store_true",
+        dest="task_labels",
+        default=False
+    )
+
     return parser
 
 

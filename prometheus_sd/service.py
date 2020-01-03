@@ -1,9 +1,9 @@
 import asyncio
 import aiodocker
 from aiofile import AIOFile
+import re
 import sys
 import json
-# import toml
 import logging
 
 from .utils import (
@@ -14,33 +14,62 @@ from .utils import (
 
 logger = logging.getLogger(__name__)
 
+invalid_label_name_chars = "[^a-zA-Z0-9_]"
+invalid_label_name_re = re.compile(invalid_label_name_chars)
 
-# async def load_containers(config, prom_config, service, task):
-#     # DEPRECATED
-#     # TODO remove
-#     docker = config.get_client()
-#     container_id = task["Status"]["ContainerStatus"]["ContainerID"]
-#     container = await docker.containers.get(container_id)
-# 
-#     networks = container._container["NetworkSettings"]["Networks"]
-# 
-#     if not network_label:
-#         if len(networks.keys()) > 1:
-#             continue
-#         else:
-#             network_label = list(networks.keys())[0]
-# 
-#     ip_address = networks[network_label]["IPAddress"]
-# 
-#     url = "%s:%s" % (ip_address, port_label)
-# 
-#     scrape_config = {
-#         "labels": discovery_labels,
-#         "targets": [url]
-#     }
-# 
-#     return scrape_config
+META_PREFIX = '__meta_docker'
+LABEL_TEMPLATE = '%s_%s_label_%s'
 
+def sanitize_label(label):
+    return re.sub(invalid_label_name_re, "_", label)
+
+def format_label(label_type, key):
+    return LABEL_TEMPLATE % (
+        META_PREFIX,
+        label_type,
+        sanitize_label(key)
+    )
+
+class Target(object):
+    def __init__(self):
+        self.service = None
+        self.task = None
+        self.container = None
+
+    def format_labels(self, label_type, labels):
+        return {
+            format_label(label_type, key): value
+            for key, value in labels.items()
+        }
+
+    def get_container_labels(self):
+        if not self.container:
+            return {}
+
+        labels = self.container._container['Config'].get('Labels', {})
+        return self.format_labels('container', labels)
+
+    def get_task_labels(self):
+        if not self.task:
+            return {}
+
+        labels = self.task['Labels']
+        labels = self.format_labels('task', labels)
+        labels["%s_task_name"] = self.task['ID']
+
+        return labels
+
+    def get_service_labels(self):
+        labels = self.service["Spec"]["Labels"]
+        return self.format_labels('service', labels)
+
+    def clone(self):
+        target = Target()
+        target.container = self.container
+        target.task = self.task
+        target.service = self.service
+        return target
+            
 
 def filter_tasks(tasks):
     """Filter tasks that seems impossible to parse further"""
@@ -71,30 +100,38 @@ def relabel_prometheus(job_config):
     return labels
 
 
-async def get_containers(config, tasks):
+async def get_containers_as_target(config, tasks):
     docker = config.get_client()
-    containers = []
+    targets = []
 
     for task in tasks:
         container_id = task["Status"]["ContainerStatus"]["ContainerID"]
         container = await docker.containers.get(container_id)
-        containers.append(container)
 
-    return containers
+        target = Target()
+        target.container = container
+        target.task = task
 
-def get_hosts(prom_config):
+        targets.append(target)
+
+    return targets
+
+def get_hosts(prom_config, service):
     hosts = prom_config.get('hosts', '')
 
     if hosts:
-        return [
+        target = Target()
+        target.service = service
+        target.hosts = [
             host.strip()
             for host in hosts.split(',')
             if host.strip()
         ]
+        return [target]
     else:
         return []
 
-def get_targets(prom_config, containers):
+def get_targets(prom_config, target_objects):
     targets = []
 
     networks_name = False
@@ -106,7 +143,8 @@ def get_targets(prom_config, containers):
     def format_host(ip_address):
         return "%s:%s" % (ip_address, port)    
 
-    for container in containers:
+    for target in target_objects:
+        container = target.container
         networks = container._container["NetworkSettings"]["Networks"]
 
         if not networks_name:
@@ -118,8 +156,23 @@ def get_targets(prom_config, containers):
 
             address = networks[network]["IPAddress"]
 
-            targets.append(format_host(address))
+            new_target = target.clone()
+            new_target.hosts = [format_host(address)]
 
+            targets.append(new_target)
+
+    return targets
+
+async def get_target_objects(config, service):
+    docker = config.get_client()
+    filters = {
+        "desired-state": "running",
+        "service": service["Spec"]["Name"],
+    }
+    tasks = await docker.tasks.list(filters=filters)
+    targets = await get_containers_as_target(config, filter_tasks(tasks))
+    for target in targets:
+        target.service = service
     return targets
 
 
@@ -141,13 +194,13 @@ async def load_service_configs(config, service):
 
     docker = config.get_client()
 
-    labels = service["Spec"]["Labels"]
+    service_labels = service["Spec"]["Labels"]
 
-    enabled_label = labels.get("prometheus.enable")
+    enabled_label = service_labels.get("prometheus.enable")
 
     # Convert service labels to dict
-    prom_labels = extract_prometheus_labels(labels)
-    prom_config = convert_labels_to_config(extract_prometheus_labels(labels))
+    prom_labels = extract_prometheus_labels(service_labels)
+    prom_config = convert_labels_to_config(extract_prometheus_labels(service_labels))
     prom_config = prom_config.get('prometheus')
 
     # skip if disabled when enabled by default or
@@ -163,13 +216,8 @@ async def load_service_configs(config, service):
     # container can die quickly and won't be available during the 
     # second call it will prevent the service discovery from crashing
     # and having one container prevent the whole config to get built
-    filters = {
-        "desired-state": "running",
-        "service": service["Spec"]["Name"],
-    }
-    tasks = await docker.tasks.list(filters=filters)
-    containers = await get_containers(config, filter_tasks(tasks))
 
+    target_objects = await get_target_objects(config, service)
     # In practice each service can declare multiple scrape jobs 
     # by default it will uses the ip of the containers linked to
     # the service or use the host being defined on the job config
@@ -190,12 +238,16 @@ async def load_service_configs(config, service):
         # could potentially handle params like __param_
         scrape_config.get('labels').update(relabel_prometheus(job_config))
         # Get all labels and apply to job labels
-        scrape_config.get('labels').update(job_config.get('labels', {}))
+        job_labels = {
+            sanitize_label(key): value
+            for key, value in job_config.get('labels', {}).items()
+        }
+        scrape_config.get('labels').update(job_labels)
 
         targets = (
-            get_targets(job_config, containers)
+            get_targets(job_config, target_objects)
             if not job_config.get('hosts')
-            else get_hosts(job_config)
+            else get_hosts(job_config, service)
         )
 
         # If no target found check next job config
@@ -203,14 +255,24 @@ async def load_service_configs(config, service):
             continue
 
         # In the meantime pack all hosts together
-        scrape_config['targets'] = targets
+        # scrape_config['targets'] = targets
+        # jobs.append(scrape_config)
         #  TODO get container/service specific labels
-        # for target in targets:
-        #     new_scrape = target.copy()
-        #     new_scrape['labels'] = target['labels'].copy()
-        #     new_scrape['targets'] = [target]
+        for target in targets:
+            new_scrape = scrape_config.copy()
+            new_scrape['labels'] = scrape_config['labels'].copy()
+            new_scrape['targets'] = target.hosts
 
-        jobs.append(scrape_config)
+            # Load meta labels from container,task,service 
+            if config.options.use_meta_labels:
+                if config.options.service_labels:
+                    new_scrape['labels'].update(target.get_service_labels())
+                if config.options.task_labels:
+                    new_scrape['labels'].update(target.get_task_labels())
+                if config.options.container_labels:
+                    new_scrape['labels'].update(target.get_container_labels())
+
+            jobs.append(new_scrape)
 
     return jobs
 
