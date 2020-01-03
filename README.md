@@ -39,25 +39,24 @@ Then you have to define `prometheus.port` if the port of the service is somethin
 
 Other optional parameters are:
 
-Label name            |  Label Value
-----------------------|---------------------------------------------------------------
-`prometheus.enable`   | by default false
-`prometheus.port`     | by default 80
-`prometheus.job`      | by default the name of the service
-`prometheus.network`  | network to expose
-`prometheus.labels.*` | Any label starting with this is feeded to the `file_sd_config`
-
-
-New format (inspired by traefik)
+Format (inspired by traefik)
 
 Label name                               | Label Value
 -----------------------------------------|----------------------------------------------------------------
 `prometheus.enable`                      | true or false
-`prometheus.targets.<job>.networks`      | networks to get ips from (optional if on one network) unused if host specified
 `prometheus.targets.<job>.scheme`        | set `__scheme__` on the current target instance (optional)
-`prometheus.targets.<job>.host`          | If present use this as target host instead of ips of current service
+`prometheus.targets.<job>.hosts`         | If present use this as target host instead of ips of current service
 `prometheus.targets.<job>.port`          | port default to (optional) (default: 80)
 `prometheus.targets.<job>.path`          | set `__metrics_path__` on the current target job (optional)
+`prometheus.targets.<job>.params.<key>`  | key/value of params for the job (optional)
+`prometheus.targets.<job>.networks`      | networks to get ips from (optional if on one network) unused if host specified
 `prometheus.targets.<job>.labels.<key>`  | key/value of labels for the job (optional)
 
-One docker service can be used to discover unrelated services
+One docker service can be used to discover unrelated services 
+
+TODO
+====
+
+- [ ] Change architecture to allow swarm mode or base container mode
+- [ ] Change architecture to allow other services than docker ones so it could support other platforms such as kubernetes,marathon...
+- [ ] Add tests / coverage to have an idea of the code quality
