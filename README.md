@@ -44,13 +44,13 @@ Format (inspired by traefik)
 Label name                               | Label Value
 -----------------------------------------|----------------------------------------------------------------
 `prometheus.enable`                      | true or false
-`prometheus.targets.<job>.scheme`        | set `__scheme__` on the current target instance (optional)
-`prometheus.targets.<job>.hosts`         | If present use this as target host instead of ips of current service
-`prometheus.targets.<job>.port`          | port default to (optional) (default: 80)
-`prometheus.targets.<job>.path`          | set `__metrics_path__` on the current target job (optional)
-`prometheus.targets.<job>.params.<key>`  | key/value of params for the job (optional)
-`prometheus.targets.<job>.networks`      | networks to get ips from (optional if on one network) unused if host specified
-`prometheus.targets.<job>.labels.<key>`  | key/value of labels for the job (optional)
+`prometheus.jobs.<job>.scheme`        | set `__scheme__` on the current target instance (optional)
+`prometheus.jobs.<job>.hosts`         | If present use this as target host instead of ips of current service
+`prometheus.jobs.<job>.port`          | port default to (optional) (default: 80)
+`prometheus.jobs.<job>.path`          | set `__metrics_path__` on the current target job (optional)
+`prometheus.jobs.<job>.params.<key>`  | key/value of params for the job (optional)
+`prometheus.jobs.<job>.networks`      | networks to get ips from (optional if on one network) unused if host specified
+`prometheus.jobs.<job>.labels.<key>`  | key/value of labels for the job (optional)
 
 One docker service can be used to discover unrelated services 
 
