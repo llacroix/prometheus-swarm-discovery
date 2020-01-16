@@ -11,6 +11,7 @@ import logging
 from .config import Config
 from .config import get_parser, setup_logging
 from .service import main_loop
+from .server import make_server
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +28,14 @@ def main():
 
     loop = asyncio.get_event_loop()
     config.loop = loop
+
+    if config.options.metrics:
+        webserver = loop.create_task(make_server(config))
+
     task = loop.create_task(main_loop(config))
+
     loop.run_until_complete(task)
+    loop.run_until_complete(webserver)
     loop.close()
 
     logger.info("All tasks completed")

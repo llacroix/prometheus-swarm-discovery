@@ -57,6 +57,7 @@ One docker service can be used to discover unrelated services
 TODO
 ====
 
+- [x] Add metrics endpoint to allow prometheus to monitor the service itself
 - [ ] Change architecture to allow swarm mode or base container mode
 - [ ] Add tests / coverage to have an idea of the code quality
 - [ ] Change architecture to allow other services than docker ones so it could support other platforms such as kubernetes,marathon...

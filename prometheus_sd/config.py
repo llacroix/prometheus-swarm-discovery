@@ -93,6 +93,31 @@ def get_parser():
         default=False
     )
 
+    parser.add_option(
+        '--metrics',
+        action="store_true",
+        dest="metrics",
+        default=False
+    )
+
+    parser.add_option(
+        '--metrics.path',
+        dest="metrics_path",
+        default="/metrics"
+    )
+
+    parser.add_option(
+        '--metrics.port',
+        dest="metrics_port",
+        default=9090
+    )
+
+    parser.add_option(
+        '--metrics.host',
+        dest="metrics_host",
+        default='localhost'
+    )
+
     return parser
 
 

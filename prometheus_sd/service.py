@@ -10,25 +10,14 @@ from .utils import (
     convert_labels_to_config,
     extract_prometheus_labels,
     label_template,
+    sanitize_label,
+    format_label
 )
+
+from .metrics import build_counter, event_counter, build_duration
 
 logger = logging.getLogger(__name__)
 
-invalid_label_name_chars = "[^a-zA-Z0-9_]"
-invalid_label_name_re = re.compile(invalid_label_name_chars)
-
-META_PREFIX = '__meta_docker'
-LABEL_TEMPLATE = '%s_%s_label_%s'
-
-def sanitize_label(label):
-    return re.sub(invalid_label_name_re, "_", label)
-
-def format_label(label_type, key):
-    return LABEL_TEMPLATE % (
-        META_PREFIX,
-        label_type,
-        sanitize_label(key)
-    )
 
 class Target(object):
     def __init__(self):
@@ -116,6 +105,7 @@ async def get_containers_as_target(config, tasks):
 
     return targets
 
+
 def get_hosts(prom_config, service):
     hosts = prom_config.get('hosts', '')
 
@@ -131,7 +121,50 @@ def get_hosts(prom_config, service):
     else:
         return []
 
+
 def get_targets(prom_config, target_objects):
+    """
+    Get targets for the scrape config, in theory this should be
+    part of the get_target_objects so get_targets return a complete
+    list itself.
+
+    TODO make it generic so targets can use one method with proper
+    parameters to build a target object.
+
+    One example would be to define target.get_context()
+
+    This methods return a correct context that can be used by the 
+    service discovery method:
+
+    scrape_config = internal.parse_config(config, target.get_context())
+
+    Instead of hard coding container._container["NetworkSettings"]["Networks"]
+
+    It could be rewritten as basic rules such as:
+
+        Expand(@container.NetworkSettings.Networks.*.IPAddress)
+
+    This way each backend can define a set of rules specific to their
+    backend but would all call
+
+    Obviously this method could be called at different level, for example
+    a prom_config can result in multiple targets being found for one object
+
+    while at a later point we could have a similar method to parse the configs
+    for the actual individual final targets.
+
+    Get Targets: Returns a list of target
+
+    config = target.get_default_configs()
+    config.update(prom_config)
+    return internal.get_targets(config, target.get_context())
+
+    Get Configs: Returns a configuration
+
+    config = target.get_default_configs()
+    config.update(prom_config)
+    return internal.parse_configs(config, target.get_context())
+    """
     targets = []
 
     networks_name = False
@@ -164,6 +197,11 @@ def get_targets(prom_config, target_objects):
     return targets
 
 async def get_target_objects(config, service):
+    """
+    Docker Swarm Candidate for get_targets().
+
+    But not really it's an internal method that returns containers
+    """
     docker = config.get_client()
     filters = {
         "desired-state": "running",
@@ -182,14 +220,37 @@ async def load_service_configs(config, service):
 
     A service config has the following format:
 
-    prometheus.enable = true | false
-    prometheus.jobs.<job>.port = "port" | null # default 80
-    prometheus.jobs.<job>.path = "/metrics" | null # default /metrics
-    prometheus.jobs.<job>.scheme = "http" | "https" | null # default "http"
-    prometheus.jobs.<job>.hosts = "host1,host2,host3" | null | default ip of containers
-    prometheus.jobs.<job>.params.<key> = "value" 
-    prometheus.jobs.<job>.networks = "network1,network2,network3" # default all networks
-    prometheus.jobs.<job>.labels.<key> = "value"
+    TODO:
+
+    Change this method so service is a ServiceObject that has multiple targets.
+
+    Each targets has a context built from the service and the target itself.
+
+    For example a target has get_context() which is target.context + target.service.context
+    combined. The context could expose something like this:
+
+    Swarm Mode:
+
+    - @container: The container
+    - @task: The task of the container
+    - @service: The service of the container
+
+    Container Mode:
+
+    - @container: The container
+
+    Each possible backend would have context specifics to their backend but the way to
+    generate the context and access their properties would be standardized so only a few
+    methods would be necessary to implement in a simple interface.
+
+        prometheus.enable = true | false
+        prometheus.jobs.<job>.port = "port" | null # default 80
+        prometheus.jobs.<job>.path = "/metrics" | null # default /metrics
+        prometheus.jobs.<job>.scheme = "http" | "https" | null # default "http"
+        prometheus.jobs.<job>.hosts = "host1,host2,host3" | null | default ip of containers
+        prometheus.jobs.<job>.params.<key> = "value" 
+        prometheus.jobs.<job>.networks = "network1,network2,network3" # default all networks
+        prometheus.jobs.<job>.labels.<key> = "value"
     """
 
     docker = config.get_client()
@@ -227,6 +288,20 @@ async def load_service_configs(config, service):
     # docker and have some configuration inside docker labels instead
     # of manually editing files.
     jobs = []
+
+    # Refactor to this:
+
+    # Ideally the code should be strictly this:
+    # 
+    # jobs = []
+    # 
+    # for config in prom_config.get('jobs'):
+    #     for target in service.get_targets(config):
+    #         jobs.append(target.get_config())
+    # 
+    # return jobs
+         
+
     for job, job_config in prom_config.get('jobs', {}).items():
         scrape_config = {
             "labels": {
@@ -244,6 +319,9 @@ async def load_service_configs(config, service):
         }
         scrape_config.get('labels').update(job_labels)
 
+        # TODO should be one method the if check should be part of the target
+        # found. Remove the abstraction service/container/host|ips and only have
+        # service / targets as the service could be a service or a container
         targets = (
             get_targets(job_config, target_objects)
             if not job_config.get('hosts')
@@ -251,6 +329,7 @@ async def load_service_configs(config, service):
         )
 
         # If no target found check next job config
+        # TODO remove when we only get targets we care of
         if not targets:
             continue
 
@@ -258,6 +337,7 @@ async def load_service_configs(config, service):
         # scrape_config['targets'] = targets
         # jobs.append(scrape_config)
         #  TODO get container/service specific labels
+        # TODO replace this code by target.get_config()
         for target in targets:
             new_scrape = scrape_config.copy()
             new_scrape['labels'] = scrape_config['labels'].copy()
@@ -277,6 +357,9 @@ async def load_service_configs(config, service):
     return jobs
 
 
+# TODO in swarm mode, service are services
+# TODO in container mode, containers are services and returns
+# themselves as containers
 async def load_existing_services(config):
     """
     Rebuild all the services scrape configurations.
@@ -301,6 +384,8 @@ async def save_configs(config, sd_configs):
     """
     logger.info("Configuration updated in %s" % (config.options.out))
 
+    build_counter.inc()
+
     async with AIOFile(config.options.out, "w") as afp:
         logger.debug(sd_configs)
         await afp.write(json.dumps(sd_configs))
@@ -319,8 +404,13 @@ async def listen_events(config):
         while True:
             event = await subscriber.get()
 
+            event_counter.inc()
+
+            # TODO check in swarm mode if the container is linked to a service
+            # TODO update configs based on containers if not swarm mode
             if event["Type"] == "container" and event["status"] in states:
-                configs = await load_existing_services(config)
+                with build_duration.time():
+                    configs = await load_existing_services(config)
                 save_config_task = config.loop.create_task(save_configs(config, configs))
                 done, pending = await asyncio.wait([save_config_task])
                 logger.debug("Save config and event tasks completed")
@@ -373,10 +463,17 @@ async def main_loop(config):
         save_config_task = loop.create_task(save_all_configs(config))
         read_events_task = loop.create_task(listen_events(config))
 
+        # TODO check if all done tasks are completed with errors or not
+        # In theory it should always return in errors so make sure we don't miss
+        # an error log
         done, pending = await asyncio.wait(
             [save_config_task, read_events_task]
         )
 
         reinit_count += 1
+
+        # TODO add a way to prevent spinning in case the loop jobs fails quickly
+        # in case reinit_count changes quickly we can probably add a sleep call
+        # that will stabilize to 1 reset per second just in case while spitting errors
 
     await config.deinit()
