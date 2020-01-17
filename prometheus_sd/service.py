@@ -14,7 +14,15 @@ from .utils import (
     format_label
 )
 
-from .metrics import build_counter, event_counter, build_duration
+from .metrics import (
+    build_counter,
+    event_counter,
+    build_duration,
+    reinit_counter,
+    errors_counter,
+    config_file_size,
+    configs_quantity,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -375,6 +383,8 @@ async def load_existing_services(config):
         for job_config in await load_service_configs(config, service)
     ]
 
+    configs_quantity.observe(len(configs))
+
     return configs
 
 
@@ -388,7 +398,10 @@ async def save_configs(config, sd_configs):
 
     async with AIOFile(config.options.out, "w") as afp:
         logger.debug(sd_configs)
-        await afp.write(json.dumps(sd_configs))
+        json_data = json.dumps(sd_configs)
+        file_size = len(json_data.encode('utf-8'))
+        config_file_size.observe(file_size)
+        await afp.write(json_data)
 
 
 async def listen_events(config):
@@ -416,7 +429,8 @@ async def listen_events(config):
                 logger.debug("Save config and event tasks completed")
 
     except Exception as exc:
-        logger.error("Something wrong happened", exc)
+        logger.info("Something wrong happened", exc_info=True)
+        errors_counter.inc()
         await config.deinit()
         raise
 
@@ -469,6 +483,9 @@ async def main_loop(config):
         done, pending = await asyncio.wait(
             [save_config_task, read_events_task]
         )
+
+
+        reinit_counter.inc()
 
         reinit_count += 1
 
