@@ -16,7 +16,7 @@ def test_something():
     with pytest.raises(Exception):
         f()
 
-def test_good_labels(self):
+def test_good_labels():
     labels = {
         "a.b.c": 1,
         "a.b.c.d": 2,
