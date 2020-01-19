@@ -29,6 +29,8 @@ def dotted_setter(obj, key):
         raise Exception('Empty key are not valid')
 
     if parts[0] not in obj:
+        if not parts[0].isalnum():
+            raise Exception('Key can only be writable characters.')
         obj[parts[0]] = {}
 
     if len(parts) > 2:
