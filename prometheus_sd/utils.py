@@ -25,6 +25,9 @@ def extract_prometheus_labels(labels):
 def dotted_setter(obj, key):
     parts = key.split('.')
 
+    if '' in parts:
+        raise Exception('Empty key are not valid')
+
     if parts[0] not in obj:
         obj[parts[0]] = {}
 
