@@ -89,3 +89,7 @@ Changelog:
 
 Added more metrics and added the prefix `promsd_` to all metrics defined by this service. Some Collector keep their own prefix but
 anything defined in this project will have the `promsd_` prefix now.
+
+2020-01-18:
+
+Added some coverage and trying to get some tests working in order to correctly parse labels
