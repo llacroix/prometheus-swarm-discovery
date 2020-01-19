@@ -28,6 +28,6 @@ jobs:
       env: 
         CODECOV_TOKEN: 06a1db97-e06a-4b2e-85b6-d3629acfd093
       run: |
-        pip install pytest pytest-cov codecov
+        pip install pytest pytest-cov codecov pytest-asyncio
         pytest --cov=./
         codecov
