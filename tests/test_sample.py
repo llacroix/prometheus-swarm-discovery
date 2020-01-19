@@ -30,3 +30,16 @@ def test_good_labels():
 
     for key in new_labels.keys():
         assert key.startswith(labels_prefix) == True
+
+def test_multi_value():
+    ctx = {}
+
+    dotted_setter(ctx, 'a.b.c')(1)
+    dotted_setter(ctx, 'a.b.d')(2)
+    dotted_setter(ctx, 'a.c.c')(3)
+    dotted_setter(ctx, 'a.c.f')(4)
+
+    assert ctx.get('a', {}).get('b', {}).get('c') == 1
+    assert ctx.get('a', {}).get('b', {}).get('d') == 2
+    assert ctx.get('a', {}).get('c', {}).get('c') == 3
+    assert ctx.get('a', {}).get('c', {}).get('f') == 4
