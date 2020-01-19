@@ -22,11 +22,20 @@ def extract_prometheus_labels(labels):
     return prometheus_labels
 
 
-def filter_key(key):
-    new_key = key
+def get_key(keys):
+    keys = keys[:]
+    keys.reverse()
 
+    new_key = keys.pop()
 
-    if key.startswith('"') and key.endswith('"'):
+    if new_key.startswith('"') and not new_key.endswith('"'):
+        temp = [new_key]
+        while not temp[-1].endswith('"') or len(keys) == 0:
+            temp.append(keys.pop())
+        new_key = '.'.join(temp)
+        keys.reverse()
+
+    if new_key.startswith('"') and new_key.endswith('"'):
         new_key = new_key[1:-1]
 
     if not new_key.replace(' ', '').isalnum():
@@ -35,21 +44,21 @@ def filter_key(key):
     if new_key.replace(' ', '') == '':
         raise Exception('Empty key are not valid')
 
-    return new_key
+    return new_key, keys
 
 
 def dotted_setter(obj, key):
     parts = key.split('.')
 
-    key1 = filter_key(parts[0])
+    key1, parts = get_key(parts)
 
     if key1 not in obj:
         obj[key1] = {}
 
-    if len(parts) > 2:
-        return dotted_setter(obj[key1], ".".join(parts[1:]))
+    if len(parts) > 1:
+        return dotted_setter(obj[key1], ".".join(parts))
     else:
-        key2 = filter_key(parts[1])
+        key2, parts = get_key(parts)
         def setter(value):
             obj[key1][key2] = value
         return setter
