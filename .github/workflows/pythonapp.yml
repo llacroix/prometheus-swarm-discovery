@@ -26,7 +26,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       env: 
-        CODECOV_TOKEN: 06a1db97-e06a-4b2e-85b6-d3629acfd093
+        CODECOV_TOKEN: ${{secrets.CODECOV_TOKEN}}
       run: |
         pip install pytest pytest-cov codecov
         pytest --cov=./
