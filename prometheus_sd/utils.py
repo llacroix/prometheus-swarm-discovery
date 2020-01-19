@@ -22,22 +22,36 @@ def extract_prometheus_labels(labels):
     return prometheus_labels
 
 
+def filter_key(key):
+    new_key = key
+
+
+    if key.startswith('"') and key.endswith('"'):
+        new_key = new_key[1:-1]
+
+    if not new_key.isalnum():
+        raise Exception('Key can only be writable characters.')
+
+    if new_key == '':
+        raise Exception('Empty key are not valid')
+
+    return new_key
+
+
 def dotted_setter(obj, key):
     parts = key.split('.')
 
-    if '' in parts:
-        raise Exception('Empty key are not valid')
+    key1 = filter_key(parts[0])
 
-    if parts[0] not in obj:
-        if not parts[0].isalnum():
-            raise Exception('Key can only be writable characters.')
-        obj[parts[0]] = {}
+    if key1 not in obj:
+        obj[key1] = {}
 
     if len(parts) > 2:
-        return dotted_setter(obj[parts[0]], ".".join(parts[1:]))
+        return dotted_setter(obj[key1], ".".join(parts[1:]))
     else:
+        key2 = filter_key(parts[1])
         def setter(value):
-            obj[parts[0]][parts[1]] = value
+            obj[key1][key2] = value
         return setter
 
 
