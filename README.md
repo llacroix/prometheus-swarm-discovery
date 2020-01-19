@@ -1,4 +1,5 @@
 [![Actions Status](https://github.com/llacroix/prometheus-swarm-discovery/workflows/Python%20application/badge.svg)](https://github.com/llacroix/prometheus-swarm-discovery/actions)
+[![codecov](https://codecov.io/gh/llacroix/prometheus-swarm-discovery/branch/master/graph/badge.svg)](https://codecov.io/gh/llacroix/prometheus-swarm-discovery)
 
 Prometheus Docker Swarm Service Discovery
 =========================================
