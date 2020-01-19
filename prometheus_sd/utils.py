@@ -29,10 +29,10 @@ def filter_key(key):
     if key.startswith('"') and key.endswith('"'):
         new_key = new_key[1:-1]
 
-    if not new_key.isalnum():
+    if not new_key.replace(' ', '').isalnum():
         raise Exception('Key can only be writable characters.')
 
-    if new_key == '':
+    if new_key.replace(' ', '') == '':
         raise Exception('Empty key are not valid')
 
     return new_key
