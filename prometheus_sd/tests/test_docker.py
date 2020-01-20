@@ -76,7 +76,8 @@ async def test_build_image():
     with open('context.tar.gz', 'rb') as context:
         image = await docker.images.build(
             fileobj=context,
-            tag="promsd"
+            tag="promsd",
+            encoding="gzip",
         )
 
         assert image is not None
