@@ -3,6 +3,10 @@ import pytest
 import aiodocker
 import os
 import tarfile
+import asyncio
+
+from prometheus_sd.service import load_service_configs
+from prometheus.config import Config, get_parser
 
 
 async def create_container(docker, image_name, pull=True):
@@ -115,6 +119,19 @@ async def test_build_image():
         name="promsd-service",
         labels=labels
     )
+
+
+    parser = get_parser()
+    config = Config(parser, args=['--out', '/tmp/services.json'])
+
+    # Could be done in a better way like waiting for service to be up
+    await asyncio.sleep(10)
+
+    service_inspect = await docker.services.inspect(service['ID'])
+
+    configs = await load_service_configs(config, service_inspect)
+
+    assert configs is not None
 
     services = await docker.services.list()
     assert len(services) > 0
