@@ -62,6 +62,19 @@ async def test_listing_containers_services(loop):
     await docker.services.delete(service['ID'])
     await docker.close()
 
-def test_cur_dir():
-    assert os.getcwd() == ''
 
+def test_build_image():
+    docker = aiodocker.Docker()
+    await docker.swarm.init()
+
+    with tarfile.open('context.tar.gz', 'w:gz') as fout:
+        for name in os.listdir('.'):
+            fout.add(name)
+
+    with open('context.tar.gz', 'rb') as context:
+        image = await docker.images.build(
+            fileobj=context,
+            tag="promsd"
+        )
+
+        assert image is not None
