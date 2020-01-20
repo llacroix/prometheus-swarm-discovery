@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 import pytest
+import logging
 
 from prometheus_sd.config import (
     Config,
     get_parser,
-    docker_url
+    docker_url,
+    setup_logging
 )
 
 
@@ -71,3 +73,27 @@ def test_config_metrics_config():
     assert config.options.metrics_path == '/metrics'
     assert config.options.metrics_host == 'localhost'
     assert config.options.metrics_port == 9090
+
+
+def test_config_log_level_base():
+    parser = get_parser()
+    args = [
+        '--out', 'text.json',
+    ]
+
+    config = Config(parser, args, DockerClientMock)
+    setup_logging(config)
+    assert isinstance(config.log_handler, logging.StreamHandler)
+
+
+
+def test_config_log_level_base():
+    parser = get_parser()
+    args = [
+        '--out', 'text.json',
+        '--log-file', 'out.log',
+    ]
+
+    config = Config(parser, args, DockerClientMock)
+    setup_logging(config)
+    assert isinstance(config.log_handler, logging.FileHandler)

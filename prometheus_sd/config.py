@@ -142,6 +142,9 @@ def setup_logging(config):
         handler = logging.FileHandler(options.log_file)
 
     handler.setFormatter(formatter)
+
+    config.log_handler = handler
+
     logger.addHandler(handler)
 
     logger.info('Logging enabled')
