@@ -45,6 +45,7 @@ async def test_server_metrics(aiohttp_client, loop):
     args = [
         '--out', 'text.json',
         '--metrics',
+        '--metrics.host', '0.0.0.0'
     ]
 
     config = Config(parser, args, DockerClientMock)
