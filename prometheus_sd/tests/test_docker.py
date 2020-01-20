@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import pytest
 import aiodocker
+import os
 
 async def create_container(docker):
     image_name = "containous/whoami:latest"
@@ -60,3 +61,7 @@ async def test_listing_containers_services(loop):
 
     await docker.services.delete(service['ID'])
     await docker.close()
+
+def test_cur_dir():
+    assert os.getcwd() == ''
+
