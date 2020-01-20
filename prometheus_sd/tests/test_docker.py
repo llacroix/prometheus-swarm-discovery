@@ -2,6 +2,7 @@
 import pytest
 import aiodocker
 import os
+import tarfile
 
 async def create_container(docker):
     image_name = "containous/whoami:latest"
