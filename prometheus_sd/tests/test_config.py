@@ -87,7 +87,7 @@ def test_config_log_level_base():
 
 
 
-def test_config_log_level_base():
+def test_config_log_level_base_file():
     parser = get_parser()
     args = [
         '--out', 'text.json',

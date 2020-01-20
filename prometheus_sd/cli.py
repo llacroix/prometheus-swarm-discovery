@@ -15,9 +15,9 @@ from .server import make_server
 
 logger = logging.getLogger(__name__)
 
-def main():
+def main(args=None, block=True):
     parser = get_parser()
-    config = Config(parser)
+    config = Config(parser, args)
 
     if not config.validate():
         sys.exit(0)
@@ -29,13 +29,15 @@ def main():
     loop = asyncio.get_event_loop()
     config.loop = loop
 
+    webserver = None
     if config.options.metrics:
         webserver = loop.create_task(make_server(config))
 
     task = loop.create_task(main_loop(config))
 
-    loop.run_until_complete(task)
-    loop.run_until_complete(webserver)
-    loop.close()
-
-    logger.info("All tasks completed")
+    if block:
+        loop.run_until_complete(task)
+        loop.run_until_complete(webserver)
+        logger.info("All tasks completed")
+    else:
+        return loop, webserver, task
