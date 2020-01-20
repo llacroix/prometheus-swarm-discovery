@@ -22,6 +22,32 @@ def test_get_hosts_empty():
     assert len(hosts) == 0
 
 
+def test_get_hosts():
+    prom_config = {
+        'hosts': 'localhost:9090,127.0.0.1:8080,www.example.com'
+    }
+    service = {}
+
+    hosts = get_hosts(prom_config, service)
+    assert len(hosts) == 1
+    assert 'localhost:9090' in hosts[0].hosts
+    assert '127.0.0.1:8080' in hosts[0].hosts
+    assert 'www.example.com' in hosts[0].hosts
+
+
+def test_get_hosts2():
+    prom_config = {
+        'hosts': 'localhost:9090 , 127.0.0.1:8080 ,www.example.com  '
+    }
+    service = {}
+
+    hosts = get_hosts(prom_config, service)
+    assert len(hosts) == 1
+    assert 'localhost:9090' in hosts[0].hosts
+    assert '127.0.0.1:8080' in hosts[0].hosts
+    assert 'www.example.com' in hosts[0].hosts
+
+
 def test_filter_tasks():
     tasks = [
         {'id': 1},
