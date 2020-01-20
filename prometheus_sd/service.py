@@ -71,7 +71,7 @@ class Target(object):
 def filter_tasks(tasks):
     """Filter tasks that seems impossible to parse further"""
     for task in tasks:
-        if "ContainerStatus" not in task["Status"]:
+        if "ContainerStatus" not in task.get("Status", {}):
             # Task probably stopped while this was getting fetched
             continue
         yield task
