@@ -6,7 +6,7 @@ from prometheus_sd.service import (
 )
 
 
-def get_hosts_empty():
+def test_get_hosts_empty():
     prom_config = {
     }
     service = {}
