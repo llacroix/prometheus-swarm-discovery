@@ -32,6 +32,15 @@ def test_config_minimal():
     assert config.get_client().url == docker_url
 
 
+def test_config_minimal_self_init():
+    parser = get_parser()
+    config = Config(parser, ['--out', 'text.json'], DockerClientMock)
+
+    assert config.validate() == True
+    assert config.get_client().url == docker_url
+    assert config.inited == True
+
+
 def test_config_metrics_config():
     parser = get_parser()
 
