@@ -25,10 +25,12 @@ logger = logging.getLogger(__name__)
 docker_url = "unix:///var/run/docker.sock"
 
 class Config(object):
-    def __init__(self, parser):
+    def __init__(self, parser, args=None):
         self.parser = parser
 
-        (options, args) = parser.parse_args()
+        self.call_args = args if args is not None else sys.argv[1:]
+
+        (options, args) = parser.parse_args(self.call_args)
 
         self.options = options
         self.args = args

@@ -8,7 +8,7 @@ from prometheus_sd.config import Config, get_parser
 
 async def test_app_metrics(aiohttp_client, loop):
     parser = get_parser()
-    config = Config(parser)
+    config = Config(parser, args=[])
     app = make_app(config)
 
     client = await aiohttp_client(app)
