@@ -51,8 +51,10 @@ def sanitize_label(label):
 
 
 def format_label(label_type, key):
-    return LABEL_TEMPLATE % (
-        META_PREFIX,
-        label_type,
-        sanitize_label(key)
+    return sanitize_label(
+        LABEL_TEMPLATE % (
+            META_PREFIX,
+            label_type,
+            key
+        )
     )
