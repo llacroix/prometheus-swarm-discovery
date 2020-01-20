@@ -112,6 +112,7 @@ def get_parser():
     parser.add_option(
         '--metrics.port',
         dest="metrics_port",
+        type="int",
         default=9090
     )
 
