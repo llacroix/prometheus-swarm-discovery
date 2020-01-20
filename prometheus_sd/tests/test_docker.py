@@ -3,8 +3,11 @@ import pytest
 import aiodocker
 
 async def create_container(docker):
+    image_name = "containous/whoami:latest"
+    image = await docker.images.pull(image_name)
+
     config = {
-        "Image": "containous/whoami:latest",
+        "Image": image_name,
     }
     container = await docker.containers.create(
         config=config,
