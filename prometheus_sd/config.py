@@ -25,8 +25,9 @@ logger = logging.getLogger(__name__)
 docker_url = "unix:///var/run/docker.sock"
 
 class Config(object):
-    def __init__(self, parser, args=None):
+    def __init__(self, parser, args=None, docker_client=aiodocker.Docker):
         self.parser = parser
+        self.docker_client = docker_client
 
         self.call_args = args if args is not None else sys.argv[1:]
 
@@ -44,7 +45,7 @@ class Config(object):
         return True
 
     def init(self):
-        self.docker = aiodocker.Docker(url=self.options.host)
+        self.docker = self.docker_client(url=self.options.host)
         self.inited = True
 
     async def deinit(self):
