@@ -49,6 +49,7 @@ async def test_listing_containers(loop):
 
 async def test_listing_containers_services(loop):
     docker = aiodocker.Docker()
+    await docker.swarm.init()
     #containers = await get_containers(docker)
     service = await create_service(docker)
     containers = await get_containers(docker)
