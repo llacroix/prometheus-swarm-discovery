@@ -2,12 +2,26 @@
 import pytest
 import aiodocker
 
+async def create_container(docker):
+    config = {
+        "Image": "containous/whoami:latest",
+    }
+    container = await docker.containers.create(
+        config=config,
+        name="test_container"
+    )
+    await container.start()
+    return container
 
-async def get_containers():
-    docker = aiodocker.Docker()
+async def get_containers(docker):
     containers = await docker.containers.list()
     return containers
 
 async def test_listing_containers(loop):
-    containers = await get_containers()
+    docker = aiodocker.Docker()
+    #containers = await get_containers(docker)
+    container = await create_container(docker)
+    containers = await get_containers(docker)
     assert len(containers) > 0
+    await container.delete(force=True)
+    await docker.close()
