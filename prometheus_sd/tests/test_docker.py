@@ -6,7 +6,7 @@ import tarfile
 import asyncio
 
 from prometheus_sd.service import load_service_configs
-from prometheus.config import Config, get_parser
+from prometheus_sd.config import Config, get_parser
 
 
 async def create_container(docker, image_name, pull=True):
