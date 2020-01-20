@@ -25,7 +25,7 @@ async def get_containers(docker):
     return containers
 
 
-async def create_service(docker, image_name):
+async def create_service(docker, image_name, pull=True):
     if pull:
         image = await docker.images.pull(image_name)
 
@@ -46,6 +46,7 @@ async def create_service(docker, image_name):
 async def test_listing_containers(loop):
     docker = aiodocker.Docker()
     #containers = await get_containers(docker)
+    image_name = "containous/whoami:latest"
     container = await create_container(docker, image_name=image_name)
     containers = await get_containers(docker)
     assert len(containers) > 0
@@ -81,13 +82,14 @@ async def test_build_image():
     with open('context.tar.gz', 'rb') as context:
         image = await docker.images.build(
             fileobj=context,
-            tag="promsd",
+            tag="promsd:latest",
             encoding="gzip",
         )
 
         assert image is not None
 
 
+    image_name = 'promsd:latest'
 
     config = {
         'ContainerSpec': {
