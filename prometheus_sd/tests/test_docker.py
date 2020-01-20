@@ -64,7 +64,7 @@ async def test_listing_containers_services(loop):
     await docker.close()
 
 
-def test_build_image():
+async def test_build_image():
     docker = aiodocker.Docker()
     await docker.swarm.init()
 
