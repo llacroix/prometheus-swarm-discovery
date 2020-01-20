@@ -24,3 +24,9 @@ async def test_main_with_metrics():
     await asyncio.sleep(0)
 
     service_task.cancel()
+
+
+async def test_main_invalid():
+    ret = main(['--metrics'], block=False)
+
+    assert ret == -1

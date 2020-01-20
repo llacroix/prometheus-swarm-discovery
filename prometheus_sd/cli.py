@@ -20,7 +20,7 @@ def main(args=None, block=True):
     config = Config(parser, args)
 
     if not config.validate():
-        sys.exit(0)
+        return -1
 
     setup_logging(config)
 
