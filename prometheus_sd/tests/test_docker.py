@@ -61,6 +61,7 @@ async def test_listing_containers_services(loop):
     assert len(services) > 0
 
     await docker.services.delete(service['ID'])
+    await docker.swarm.leave(force=True)
     await docker.close()
 
 
@@ -79,3 +80,6 @@ async def test_build_image():
         )
 
         assert image is not None
+
+    await docker.swarm.leave(force=True)
+    await docker.close()
