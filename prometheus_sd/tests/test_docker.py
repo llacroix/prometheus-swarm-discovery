@@ -4,9 +4,10 @@ import aiodocker
 import os
 import tarfile
 
-async def create_container(docker):
-    image_name = "containous/whoami:latest"
-    image = await docker.images.pull(image_name)
+
+async def create_container(docker, image_name, pull=True):
+    if pull:
+        image = await docker.images.pull(image_name)
 
     config = {
         "Image": image_name,
@@ -18,13 +19,15 @@ async def create_container(docker):
     await container.start()
     return container
 
+
 async def get_containers(docker):
     containers = await docker.containers.list()
     return containers
 
-async def create_service(docker):
-    image_name = "containous/whoami:latest"
-    image = await docker.images.pull(image_name)
+
+async def create_service(docker, image_name):
+    if pull:
+        image = await docker.images.pull(image_name)
 
     config = {
         'ContainerSpec': {
@@ -39,10 +42,11 @@ async def create_service(docker):
 
     return service
 
+
 async def test_listing_containers(loop):
     docker = aiodocker.Docker()
     #containers = await get_containers(docker)
-    container = await create_container(docker)
+    container = await create_container(docker, image_name=image_name)
     containers = await get_containers(docker)
     assert len(containers) > 0
     await container.delete(force=True)
@@ -52,8 +56,9 @@ async def test_listing_containers(loop):
 async def test_listing_containers_services(loop):
     docker = aiodocker.Docker()
     await docker.swarm.init()
+    image_name = "containous/whoami:latest"
     #containers = await get_containers(docker)
-    service = await create_service(docker)
+    service = await create_service(docker, image_name=image_name)
     containers = await get_containers(docker)
     services = await docker.services.list()
 
@@ -81,6 +86,37 @@ async def test_build_image():
         )
 
         assert image is not None
+
+
+
+    config = {
+        'ContainerSpec': {
+            'Image': image_name,
+            'Args': ['--out', '/tmp/test.json'],
+            'Mounts': [
+                {
+                    'Type': 'bind',
+                    'Source': '/var/run/docker.sock',
+                    'Target': '/var/run/docker.sock'
+                }
+            ]
+        }
+    }
+
+    labels = {
+        "prometheus.enable": "true",
+        "prometheus.jobs.main.port": "9090",
+    }
+
+    service = await docker.services.create(
+        task_template=config,
+        name="promsd-service",
+        labels=labels
+    )
+
+    services = await docker.services.list()
+    assert len(services) > 0
+    await docker.services.delete(service['ID'])
 
     await docker.swarm.leave(force=True)
     await docker.close()
