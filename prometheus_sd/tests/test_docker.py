@@ -133,6 +133,10 @@ async def test_build_image():
 
     assert configs is not None
 
+    configs2 = await load_existing_services(config)
+
+    assert len(configs) == len(configs2)
+
     services = await docker.services.list()
     assert len(services) > 0
     await docker.services.delete(service['ID'])

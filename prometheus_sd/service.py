@@ -340,11 +340,6 @@ async def load_service_configs(config, service):
             else get_hosts(job_config, service)
         )
 
-        # If no target found check next job config
-        # TODO remove when we only get targets we care of
-        if not targets:
-            continue
-
         # In the meantime pack all hosts together
         # scrape_config['targets'] = targets
         # jobs.append(scrape_config)
