@@ -84,14 +84,3 @@ the resources/targets. To make it easier each Backend can create labels on the f
 So as long as the format is similar, we can support many backends the same ways Traefik does through different plugins. So docker could be become
 an optional backend if it's not used.
 
-Changelog:
-==========
-
-2020-01-17:
-
-Added more metrics and added the prefix `promsd_` to all metrics defined by this service. Some Collector keep their own prefix but
-anything defined in this project will have the `promsd_` prefix now.
-
-2020-01-18:
-
-Added some coverage and trying to get some tests working in order to correctly parse labels
