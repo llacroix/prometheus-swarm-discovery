@@ -280,7 +280,8 @@ async def load_service_configs(config, service):
     # skip when not enabled by default and not enabled
     if (
         (config.enabled_by_default and enabled_label == 'false') or
-        (not config.enabled_by_default and not enabled_label == 'true')
+        (not config.enabled_by_default and not enabled_label == 'true') or
+        enabled_label not in ['true', 'false', None]
     ):
         return []
 
@@ -339,11 +340,6 @@ async def load_service_configs(config, service):
             if not job_config.get('hosts')
             else get_hosts(job_config, service)
         )
-
-        # If no target found check next job config
-        # TODO remove when we only get targets we care of
-        if not targets:
-            continue
 
         # In the meantime pack all hosts together
         # scrape_config['targets'] = targets

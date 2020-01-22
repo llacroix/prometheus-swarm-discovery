@@ -2,10 +2,16 @@
 import pytest
 import aiodocker
 import os
+import json
 import tarfile
 import asyncio
+from aiofile import AIOFile
 
-from prometheus_sd.service import load_service_configs
+from prometheus_sd.service import (
+    load_service_configs,
+    load_existing_services,
+    save_configs
+)
 from prometheus_sd.config import Config, get_parser
 
 
@@ -95,7 +101,7 @@ async def test_build_image():
 
     image_name = 'promsd:latest'
 
-    config = {
+    service_config = {
         'ContainerSpec': {
             'Image': image_name,
             'Args': ['--out', '/tmp/test.json'],
@@ -115,7 +121,7 @@ async def test_build_image():
     }
 
     service = await docker.services.create(
-        task_template=config,
+        task_template=service_config,
         name="promsd-service",
         labels=labels
     )
@@ -133,9 +139,79 @@ async def test_build_image():
 
     assert configs is not None
 
+    configs2 = await load_existing_services(config)
+
+    assert len(configs) == len(configs2)
+    assert configs[0]['labels']['job'] == 'main'
+
+    labels2 = labels.copy()
+    labels2['prometheus.enable'] = 'false'
+
+    service2 = await docker.services.create(
+        task_template=service_config,
+        name="promsd-service2",
+        labels=labels2
+    )
+
+    configs3 = await load_existing_services(config)
+    assert len(configs3) == 1
+
+    config = Config(parser, args=['--out', '/tmp/services.json', '--meta-labels', '--service-labels'])
+
+    configs3 = await load_existing_services(config)
+    assert len(configs3) == 1
+
+    assert '__meta_docker_service_label_prometheus_enable' in configs3[0]['labels']
+
+    # load all possible labels
+    config = Config(
+        parser,
+        args=[
+            '--out',
+            '/tmp/services.json',
+            '--meta-labels',
+            '--service-labels',
+            '--task-labels',
+            '--container-labels'
+        ]
+    )
+
+    configs3 = await load_existing_services(config)
+    assert len(configs3) == 1
+    assert '__meta_docker_service_label_prometheus_enable' in configs3[0]['labels']
+    assert '__meta_docker_container_label_com_docker_swarm_node_id' in configs3[0]['labels']
+    # TODO add test for task labels, those are usually empty
+
     services = await docker.services.list()
     assert len(services) > 0
     await docker.services.delete(service['ID'])
 
     await docker.swarm.leave(force=True)
     await docker.close()
+
+
+async def test_save_configs():
+    scrape_config = [
+        {
+            "labels": {
+                "job": "job1",
+            },
+            "targets": [
+                "example.com",
+                "test.example.com",
+            ]
+        },
+    ]
+
+    parser = get_parser()
+    file_out = '/tmp/services.json'
+    config = Config(parser, args=['--out', file_out])
+
+    await save_configs(config, scrape_config)
+
+    async with AIOFile(file_out, 'r') as fin:
+        data = await fin.read()
+        obj = json.loads(data)
+
+        assert len(obj) == len(scrape_config)
+        assert obj[0]['labels']['job'] == scrape_config[0]['labels']['job']
