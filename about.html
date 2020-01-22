@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>About prometheus-swarm-sd &#8212; Prometheus Swarm SD 1.0.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="author" title="About these documents" href="#" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Configuration" href="configuration.html" />
+    <link rel="prev" title="Welcome to Prometheus Swarm SD’s documentation!" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="about-prometheus-swarm-sd">
+<h1>About prometheus-swarm-sd<a class="headerlink" href="#about-prometheus-swarm-sd" title="Permalink to this headline">¶</a></h1>
+<p>This service expose docker swarm services in a json scrape configuration for prometheus.</p>
+<p>In order to discover services, each services must contain a small amount of information
+on how to scrape data from them.</p>
+<p>The main idea behind this service discovery service is that each service should be self
+aware. So when you create a service you should be able to tell what endpoint has the
+/metrics to be exposed and on which port. If it was possible we could also potentially
+expose authentication methods so sevice could expose credentials.  But it’s not possible
+as of yet because prometheus simply doesn’t allow this.</p>
+<p>If you need to setup credentials, you’ll have to do it directly in the scrape config
+in prometheus.yml.</p>
+<p>As a result of a few limitation, this project is only good for exposing labels and targets.
+It can’t do much more than that.</p>
+<p>As the basic way to configure scrape jobs is highly inspired by traefik, it’s possible to
+not only configure an actual service itself but other services than the one on which the
+configuration lays on.</p>
+<div class="section" id="why-would-you-want-to-expose-multiple-scrape-endpoint-on-a-single-service">
+<h2>Why would you want to expose multiple scrape endpoint on a single service?<a class="headerlink" href="#why-would-you-want-to-expose-multiple-scrape-endpoint-on-a-single-service" title="Permalink to this headline">¶</a></h2>
+<p>Not everything is made equal and sometimes, a docker service can have multiple endpoints
+in it. So being limited to one scrape config per service may not fit everybody. So to keep
+things general the <cite>prometheus.jobs.&lt;job_name&gt;.*</cite> is added to labels so one service can define:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">prometheus</span><span class="o">.</span><span class="n">jobs</span><span class="o">.</span><span class="n">frontend</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="s2">&quot;8080&quot;</span>
+<span class="n">prometheus</span><span class="o">.</span><span class="n">jobs</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="s2">&quot;9090&quot;</span>
+</pre></div>
+</div>
+<p>And prometheus will correctly be able to parse both endpoints.</p>
+<p>As a side effect, it’s also possible to do this:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">prometheus</span><span class="o">.</span><span class="n">jobs</span><span class="o">.</span><span class="n">extra</span><span class="o">.</span><span class="n">hosts</span> <span class="o">=</span> <span class="s2">&quot;example.com:80,test.example.com:80&quot;</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Prometheus Swarm SD</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">About prometheus-swarm-sd</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#why-would-you-want-to-expose-multiple-scrape-endpoint-on-a-single-service">Why would you want to expose multiple scrape endpoint on a single service?</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/index.html">Module documentation</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to Prometheus Swarm SD’s documentation!</a></li>
+      <li>Next: <a href="configuration.html" title="next chapter">Configuration</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Loïc Faure-Lacroix.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/about.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

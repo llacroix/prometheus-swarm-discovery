@@ -1,0 +1,193 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Configuration &#8212; Prometheus Swarm SD 1.0.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Module documentation" href="modules/index.html" />
+    <link rel="prev" title="About prometheus-swarm-sd" href="about.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="configuration">
+<h1>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="basic-configuration-to-run">
+<h2>Basic Configuration to Run<a class="headerlink" href="#basic-configuration-to-run" title="Permalink to this headline">¶</a></h2>
+<p>This project is meant to be configured mostly through labels on the services you are running.
+The configuration to run the service are quite minimal.</p>
+<p>The only require configuration is the output file where to log the scrape configs. As prometheus
+use file_sd, that’s really the only required settings in a basic setup.</p>
+<p>Running the service is as simple as this:</p>
+<blockquote>
+<div><p>prometheus_sd –out /path/to/config.json</p>
+</div></blockquote>
+<p>Other settings can be found using the <cite>–help</cite> argument.</p>
+</div>
+<div class="section" id="configuring-services">
+<h2>Configuring services<a class="headerlink" href="#configuring-services" title="Permalink to this headline">¶</a></h2>
+<p>Service configuration tries not to take things into account, as docker services aren’t well
+defined to exactly know what endpoint can be scraped. The labels are there to define that.</p>
+<p>The configuration is quite similar to how it’s done using the traefik proxy server.</p>
+<p>Here’s a list of currently supported features:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 40%" />
+<col style="width: 60%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Label</p></th>
+<th class="head"><p>Value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>prometheus.enable</p></td>
+<td><p>true | false</p></td>
+</tr>
+<tr class="row-odd"><td><p>prometheus.jobs.&lt;job&gt;.port</p></td>
+<td><p>“port” | null # default 80</p></td>
+</tr>
+<tr class="row-even"><td><p>prometheus.jobs.&lt;job&gt;.path</p></td>
+<td><p>“/metrics” | null # default /metrics</p></td>
+</tr>
+<tr class="row-odd"><td><p>prometheus.jobs.&lt;job&gt;.scheme</p></td>
+<td><p>“http” | “https” | null # default “http”</p></td>
+</tr>
+<tr class="row-even"><td><p>prometheus.jobs.&lt;job&gt;.hosts</p></td>
+<td><p>“host1,host2,host3” | null | default ip of containers</p></td>
+</tr>
+<tr class="row-odd"><td><p>prometheus.jobs.&lt;job&gt;.params.&lt;key&gt;</p></td>
+<td><p>“value”</p></td>
+</tr>
+<tr class="row-even"><td><p>prometheus.jobs.&lt;job&gt;.networks</p></td>
+<td><p>“network1,network2,network3” # default all networks</p></td>
+</tr>
+<tr class="row-odd"><td><p>prometheus.jobs.&lt;job&gt;.labels.&lt;key&gt;</p></td>
+<td><p>“value”</p></td>
+</tr>
+</tbody>
+</table>
+<p>If services are exposed by default then the minimum required would be to have at least one</p>
+<p><cite>prometheus.jobs.&lt;job&gt;.&lt;any&gt;</cite> attribute defined.</p>
+<p>The minimal, albeit redundant, configuration would be this:</p>
+<blockquote>
+<div><p>prometheus.jobs.my_job.labels.job = “my_job”</p>
+</div></blockquote>
+<p>It would expose the service configuration like the following:</p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">[</span>
+    <span class="p">{</span>
+       <span class="s2">&quot;labels&quot;</span><span class="o">:</span> <span class="p">{</span>
+          <span class="s2">&quot;job&quot;</span><span class="o">:</span> <span class="s2">&quot;my_job&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;__scheme__&quot;</span><span class="o">:</span> <span class="s2">&quot;http&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;__metrics_path__&quot;</span><span class="o">:</span> <span class="s2">&quot;/metrics&quot;</span><span class="p">,</span>
+       <span class="p">},</span>
+       <span class="s2">&quot;targets&quot;</span><span class="o">:</span> <span class="p">[</span><span class="s2">&quot;ip_instance:80&quot;</span><span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<p>If a service is in multiple networks, it will try to expose all the network ips unless requested otherwise.
+Thought this behaviour could change in the future if you don’t want the same service to be scraped from different
+networks by default.</p>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Prometheus Swarm SD</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="about.html">About prometheus-swarm-sd</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#basic-configuration-to-run">Basic Configuration to Run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#configuring-services">Configuring services</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules/index.html">Module documentation</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="about.html" title="previous chapter">About prometheus-swarm-sd</a></li>
+      <li>Next: <a href="modules/index.html" title="next chapter">Module documentation</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Loïc Faure-Lacroix.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/configuration.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
