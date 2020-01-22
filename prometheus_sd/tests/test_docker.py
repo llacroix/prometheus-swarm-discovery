@@ -101,7 +101,7 @@ async def test_build_image():
 
     image_name = 'promsd:latest'
 
-    config = {
+    service_config = {
         'ContainerSpec': {
             'Image': image_name,
             'Args': ['--out', '/tmp/test.json'],
@@ -121,7 +121,7 @@ async def test_build_image():
     }
 
     service = await docker.services.create(
-        task_template=config,
+        task_template=service_config,
         name="promsd-service",
         labels=labels
     )
@@ -147,10 +147,10 @@ async def test_build_image():
     labels2 = labels.copy()
     labels2['prometheus.enable'] = 'false'
 
-    service = await docker.services.create(
-        task_template=config,
+    service2 = await docker.services.create(
+        task_template=service_config,
         name="promsd-service",
-        labels=labels
+        labels=labels2
     )
 
     configs3 = await load_existing_services(config)
