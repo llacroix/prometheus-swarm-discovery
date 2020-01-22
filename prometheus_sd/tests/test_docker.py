@@ -149,7 +149,7 @@ async def test_build_image():
 
     service2 = await docker.services.create(
         task_template=service_config,
-        name="promsd-service",
+        name="promsd-service2",
         labels=labels2
     )
 
