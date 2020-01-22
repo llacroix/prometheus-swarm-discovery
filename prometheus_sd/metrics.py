@@ -43,5 +43,14 @@ def get_metrics():
     - promsd_request_count
     """
     return {
-        'req_counter': req_counter
+        'req_counter': req_counter,
+        'build_counter': build_counter,
+        'event_counter': event_counter,
+        'reinit_counter': reinit_counter,
+        'errors_counter': errors_counter,
+        'build_duration': build_duration,
+        'config_file_size': config_file_size,
+        'configs_quantity': configs_quantity,
     }
+
+metrics = get_metrics()
