@@ -156,6 +156,32 @@ async def test_build_image():
     configs3 = await load_existing_services(config)
     assert len(configs3) == 1
 
+    config = Config(parser, args=['--out', '/tmp/services.json', '--use-meta-labels', '--service-labels'])
+
+    configs3 = await load_existing_services(config)
+    assert len(configs3) == 1
+
+    assert '__meta_docker_service_label_prometheus_enable' in configs3[0]['labels']
+
+    # load all possible labels
+    config = Config(
+        parser,
+        args=[
+            '--out',
+            '/tmp/services.json',
+            '--use-meta-labels',
+            '--service-labels',
+            '--task-labels',
+            '--container-labels'
+        ]
+    )
+
+    configs3 = await load_existing_services(config)
+    assert len(configs3) == 1
+    assert '__meta_docker_service_label_prometheus_enable' in configs3[0]['labels']
+    assert '__meta_docker_container_label_com_docker_swarm_node_id' in configs3[0]['labels']
+    # TODO add test for task labels, those are usually empty
+
     services = await docker.services.list()
     assert len(services) > 0
     await docker.services.delete(service['ID'])
