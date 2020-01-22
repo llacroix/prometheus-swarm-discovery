@@ -156,7 +156,7 @@ async def test_build_image():
     configs3 = await load_existing_services(config)
     assert len(configs3) == 1
 
-    config = Config(parser, args=['--out', '/tmp/services.json', '--use-meta-labels', '--service-labels'])
+    config = Config(parser, args=['--out', '/tmp/services.json', '--meta-labels', '--service-labels'])
 
     configs3 = await load_existing_services(config)
     assert len(configs3) == 1
@@ -169,7 +169,7 @@ async def test_build_image():
         args=[
             '--out',
             '/tmp/services.json',
-            '--use-meta-labels',
+            '--meta-labels',
             '--service-labels',
             '--task-labels',
             '--container-labels'
