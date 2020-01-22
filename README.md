@@ -2,6 +2,7 @@
 [![codecov](https://codecov.io/gh/llacroix/prometheus-swarm-discovery/branch/master/graph/badge.svg)](https://codecov.io/gh/llacroix/prometheus-swarm-discovery)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/3629/badge)](https://bestpractices.coreinfrastructure.org/projects/3629)
 [![Docker Pulls](https://img.shields.io/docker/pulls/llacroix/prometheus-swarm?style=plastic)](https://hub.docker.com/r/llacroix/prometheus-swarm)
+[![Docker Repository on Quay](https://quay.io/repository/llacroix/prometheus-swarm/status "Docker Repository on Quay")](https://quay.io/repository/llacroix/prometheus-swarm)
 
 Prometheus Docker Swarm Service Discovery
 =========================================
