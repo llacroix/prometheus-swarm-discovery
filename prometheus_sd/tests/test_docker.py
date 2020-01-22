@@ -2,6 +2,7 @@
 import pytest
 import aiodocker
 import os
+import json
 import tarfile
 import asyncio
 from aiofile import AIOFile
