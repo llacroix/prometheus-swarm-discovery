@@ -4,10 +4,12 @@ import aiodocker
 import os
 import tarfile
 import asyncio
+from aiofile import AIOFile
 
 from prometheus_sd.service import (
     load_service_configs,
-    load_existing_services
+    load_existing_services,
+    save_configs
 )
 from prometheus_sd.config import Config, get_parser
 
@@ -146,3 +148,30 @@ async def test_build_image():
 
     await docker.swarm.leave(force=True)
     await docker.close()
+
+
+async def test_save_configs():
+    scrape_config = [
+        {
+            "labels": {
+                "job": "job1",
+            },
+            "targets": [
+                "example.com",
+                "test.example.com",
+            ]
+        },
+    ]
+
+    parser = get_parser()
+    file_out = '/tmp/services.json'
+    config = Config(parser, args=['--out', file_out])
+
+    await save_configs(config, scrape_config)
+
+    async with AIOFile(file_out, 'r') as fin:
+        data = await fin.read()
+        obj = json.loads(data)
+
+        assert len(obj) == len(scrape_config)
+        assert obj[0]['labels']['job'] == scrape_config[0]['labels']['job']
