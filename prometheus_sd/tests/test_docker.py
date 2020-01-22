@@ -5,7 +5,10 @@ import os
 import tarfile
 import asyncio
 
-from prometheus_sd.service import load_service_configs
+from prometheus_sd.service import (
+    load_service_configs,
+    load_existing_services
+)
 from prometheus_sd.config import Config, get_parser
 
 
