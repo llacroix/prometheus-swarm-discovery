@@ -163,15 +163,15 @@ def get_targets(prom_config, target_objects):
 
     Get Targets: Returns a list of target
 
-    config = target.get_default_configs()
-    config.update(prom_config)
-    return internal.get_targets(config, target.get_context())
+        config = target.get_default_configs()
+        config.update(prom_config)
+        return internal.get_targets(config, target.get_context())
 
     Get Configs: Returns a configuration
 
-    config = target.get_default_configs()
-    config.update(prom_config)
-    return internal.parse_configs(config, target.get_context())
+        config = target.get_default_configs()
+        config.update(prom_config)
+        return internal.parse_configs(config, target.get_context())
     """
     targets = []
 
@@ -251,14 +251,18 @@ async def load_service_configs(config, service):
     generate the context and access their properties would be standardized so only a few
     methods would be necessary to implement in a simple interface.
 
-        prometheus.enable = true | false
-        prometheus.jobs.<job>.port = "port" | null # default 80
-        prometheus.jobs.<job>.path = "/metrics" | null # default /metrics
-        prometheus.jobs.<job>.scheme = "http" | "https" | null # default "http"
-        prometheus.jobs.<job>.hosts = "host1,host2,host3" | null | default ip of containers
-        prometheus.jobs.<job>.params.<key> = "value" 
-        prometheus.jobs.<job>.networks = "network1,network2,network3" # default all networks
-        prometheus.jobs.<job>.labels.<key> = "value"
+    ====================================  =======================================================
+                  Label                         Value
+    ====================================  =======================================================
+    prometheus.enable                     true | false
+    prometheus.jobs.<job>.port            "port" | null # default 80
+    prometheus.jobs.<job>.path            "/metrics" | null # default /metrics
+    prometheus.jobs.<job>.scheme          "http" | "https" | null # default "http"
+    prometheus.jobs.<job>.hosts           "host1,host2,host3" | null | default ip of containers
+    prometheus.jobs.<job>.params.<key>    "value" 
+    prometheus.jobs.<job>.networks        "network1,network2,network3" # default all networks
+    prometheus.jobs.<job>.labels.<key>    "value"
+    ====================================  =======================================================
     """
 
     docker = config.get_client()

@@ -33,3 +33,15 @@ errors_counter = Counter('promsd_errors_count', 'Amount of errors caught', regis
 build_duration = Histogram('promsd_build_seconds', 'Time spent building config', registry=registry)
 config_file_size = Histogram('promsd_config_size_bytes', 'Bytes written in the configuration', registry=registry)
 configs_quantity = Histogram('promsd_configs_units', 'Quantity of configs generated', registry=registry)
+
+def get_metrics():
+    """
+    Returns a dictionary containing all the metrics for a certain registry.
+
+    Defines the following metrics:
+
+    - promsd_request_count
+    """
+    return {
+        'req_counter': req_counter
+    }
