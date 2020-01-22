@@ -280,7 +280,8 @@ async def load_service_configs(config, service):
     # skip when not enabled by default and not enabled
     if (
         (config.enabled_by_default and enabled_label == 'false') or
-        (not config.enabled_by_default and not enabled_label == 'true')
+        (not config.enabled_by_default and not enabled_label == 'true') or
+        enabled_label not in ['true', 'false', None]
     ):
         return []
 

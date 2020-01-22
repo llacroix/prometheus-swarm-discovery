@@ -142,6 +142,19 @@ async def test_build_image():
     configs2 = await load_existing_services(config)
 
     assert len(configs) == len(configs2)
+    assert configs[0]['labels']['job'] == 'main'
+
+    labels2 = labels.copy()
+    labels2['prometheus.enable'] = 'false'
+
+    service = await docker.services.create(
+        task_template=config,
+        name="promsd-service",
+        labels=labels
+    )
+
+    configs3 = await load_existing_services(config)
+    assert len(configs3) == 1
 
     services = await docker.services.list()
     assert len(services) > 0
