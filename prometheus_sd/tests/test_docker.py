@@ -215,3 +215,18 @@ async def test_save_configs():
 
         assert len(obj) == len(scrape_config)
         assert obj[0]['labels']['job'] == scrape_config[0]['labels']['job']
+
+
+async def test_config_deinit():
+    success = True
+    parser = get_parser()
+    file_out = '/tmp/services.json'
+    config = Config(parser, args=['--out', file_out])
+
+    config.init()
+
+    assert config.inited == True
+
+    await config.deinit()
+
+    assert config.inited == False
