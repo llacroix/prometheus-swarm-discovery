@@ -57,6 +57,9 @@ class Target(object):
         return labels
 
     def get_service_labels(self):
+        if not self.service:
+            return {}
+
         labels = self.service["Spec"]["Labels"]
         return self.format_labels('service', labels)
 
