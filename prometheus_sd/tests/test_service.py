@@ -3,6 +3,7 @@ import pytest
 from prometheus_sd.service import (
     filter_tasks,
     get_hosts,
+    Target
 )
 
 
@@ -66,3 +67,19 @@ def test_filter_tasks():
     assert filtered_tasks[0]['id'] == 2
     assert filtered_tasks[1]['id'] == 3
     assert filtered_tasks[2]['id'] == 5
+
+
+def test_empty_target():
+    target = Target()
+
+    c_labels = target.get_container_labels()
+    assert isinstance(c_labels, dict)
+    assert len(c_labels.keys()) == 0
+
+    t_labels = target.get_task_labels()
+    assert isinstance(t_labels, dict)
+    assert len(t_labels.keys()) == 0
+
+    s_labels = target.get_service_labels()
+    assert isinstance(s_labels, dict)
+    assert len(s_labels.keys()) == 0
