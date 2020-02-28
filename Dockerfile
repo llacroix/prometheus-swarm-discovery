@@ -1,4 +1,4 @@
-from ubuntu:bionic
+from ubuntu:disco
 
 COPY . /prometheus_sd
 #COPY requirements.txt /prometheus_sd/requirements.txt
@@ -7,7 +7,7 @@ COPY . /prometheus_sd
 
 RUN apt-get update \
     && apt-get install --no-install-recommends -y \
-        python3.6 \
+        python3 \
         python3-pip \
         python3-setuptools \
         python3-wheel \

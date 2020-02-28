@@ -31,13 +31,16 @@ class Config(object):
         self.docker_client = docker_client
 
         if loop is None:
-            self.loop = asyncio.get_event_loop()
+            loop = asyncio.get_event_loop()
+
+        self.loop = loop
+
 
         self.call_args = args if args is not None else sys.argv[1:]
 
         (options, args) = parser.parse_args(self.call_args)
 
-        self.tasks = {}
+        self.tasks = set()
         self.options = options
         self.args = args
         self.inited = False
@@ -62,6 +65,12 @@ class Config(object):
         if not self.inited:
             self.init()
         return self.docker
+
+    def get_tasks(self):
+        return [
+            task[1]
+            for task in self.tasks
+        ]
 
 
 def get_parser():

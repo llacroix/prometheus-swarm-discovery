@@ -29,7 +29,7 @@ async def test_main_invalid():
 
 
 async def watchdog_kill(config):
-    for task in config.tasks.values():
+    for task in config.tasks:
         task.cancel()
     config.shutdown.set_result(True)
 

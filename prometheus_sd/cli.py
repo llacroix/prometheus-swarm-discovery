@@ -37,7 +37,8 @@ def main(args=None, watchdog_factory=None):
     task = loop.create_task(main_loop(config))
     config.tasks.add(('discovery', task))
 
-    await_tasks = config.tasks.values()
+    await_tasks = config.get_tasks()
+
     if watchdog_factory:
         watchdog_task = loop.create_task(
             watchdog_factory(config)
