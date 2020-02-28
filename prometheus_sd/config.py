@@ -19,24 +19,30 @@ import sys
 import aiodocker
 from optparse import OptionParser
 import logging
+import asyncio
 
 logger = logging.getLogger(__name__)
 
 docker_url = "unix:///var/run/docker.sock"
 
 class Config(object):
-    def __init__(self, parser, args=None, docker_client=aiodocker.Docker):
+    def __init__(self, parser, args=None, loop=None, docker_client=aiodocker.Docker):
         self.parser = parser
         self.docker_client = docker_client
+
+        if loop is None:
+            self.loop = asyncio.get_event_loop()
 
         self.call_args = args if args is not None else sys.argv[1:]
 
         (options, args) = parser.parse_args(self.call_args)
 
+        self.tasks = {}
         self.options = options
         self.args = args
         self.inited = False
         self.enabled_by_default = not self.options.only_enabled
+        self.shutdown = self.loop.create_future()
 
     def validate(self):
         if not self.options.out:

@@ -64,9 +64,12 @@ async def make_server(config):
         config.options.metrics_port
     )
 
+    await site.start()
+
     logger.info("Metrics endpoint started on http://%s:%s%s" % (
         config.options.metrics_host,
         config.options.metrics_port,
         config.options.metrics_path
     ))
-    await site.start()
+
+    await config.shutdown

@@ -4,29 +4,35 @@ import asyncio
 from prometheus_sd.cli import main
 
 
+async def watchdog(config):
+    await asyncio.sleep(1)
+    config.shutdown.set_result(True)
+
+
 async def test_main():
-    loop, webserver, service_task = main(['--out', 'file.json'], block=False)
 
-    assert webserver == None
-    assert service_task != None
+    ret = main(['--out', 'file.json'], watchdog_factory=watchdog)
 
-    await asyncio.sleep(0)
-
-    service_task.cancel()
+    assert ret == 0
 
 
 async def test_main_with_metrics():
-    loop, webserver, service_task = main(['--out', 'file.json', '--metrics'], block=False)
+    ret = main(['--out', 'file.json', '--metrics'], watchdog_factory=watchdog)
 
-    assert webserver != None
-    assert service_task != None
-
-    await asyncio.sleep(0)
-
-    service_task.cancel()
+    assert ret == 0
 
 
 async def test_main_invalid():
-    ret = main(['--metrics'], block=False)
+    ret = main(['--metrics'], watchdog_factory=watchdog)
 
     assert ret == -1
+
+
+async def watchdog_kill(config):
+    for task in config.tasks.values():
+        task.cancel()
+    config.shutdown.set_result(True)
+
+async def test_watchdog_kill():
+    ret = main(['--metrics'], watchdog_factory=watchdog_kill)
+    assert ret == 0

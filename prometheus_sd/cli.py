@@ -15,9 +15,12 @@ from .server import make_server
 
 logger = logging.getLogger(__name__)
 
-def main(args=None, block=True):
+def main(args=None, watchdog_factory=None):
     parser = get_parser()
-    config = Config(parser, args)
+
+    loop = asyncio.get_event_loop()
+
+    config = Config(parser, args, loop)
 
     if not config.validate():
         return -1
@@ -26,18 +29,25 @@ def main(args=None, block=True):
 
     logger.info("Starting service")
 
-    loop = asyncio.get_event_loop()
-    config.loop = loop
-
     webserver = None
     if config.options.metrics:
         webserver = loop.create_task(make_server(config))
+        config.tasks.add(('webserver', webserver))
 
     task = loop.create_task(main_loop(config))
+    config.tasks.add(('discovery', task))
 
-    if block:
-        loop.run_until_complete(task)
-        loop.run_until_complete(webserver)
-        logger.info("All tasks completed")
-    else:
-        return loop, webserver, task
+    await_tasks = config.tasks.values()
+    if watchdog_factory:
+        watchdog_task = loop.create_task(
+            watchdog_factory(config)
+        )
+        await_tasks.append(watchdog_task)
+
+    tasks = asyncio.wait(await_tasks)
+
+    done, pending = loop.run_until_complete(tasks)
+
+    logger.info("All tasks completed")
+
+    return len(pending)
