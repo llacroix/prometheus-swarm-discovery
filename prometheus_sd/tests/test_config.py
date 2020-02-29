@@ -43,7 +43,7 @@ def test_config_minimal_self_init(loop):
     assert config.inited is True
 
 
-def test_config_metrics_config():
+def test_config_metrics_config(loop):
     parser = get_parser()
 
     args = [
@@ -54,7 +54,7 @@ def test_config_metrics_config():
         '--metrics.port', '9191'
     ]
 
-    config = Config(parser, args, DockerClientMock)
+    config = Config(parser, args, loop, DockerClientMock)
     config.init()
 
     assert config.options.metrics is True
@@ -66,7 +66,7 @@ def test_config_metrics_config():
         '--out', 'text.json',
     ]
 
-    config = Config(parser, args, DockerClientMock)
+    config = Config(parser, args, loop, DockerClientMock)
     config.init()
 
     assert config.options.metrics is False

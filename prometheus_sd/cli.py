@@ -16,10 +16,11 @@ from .server import make_server
 logger = logging.getLogger(__name__)
 
 
-def main(args=None, watchdog_factory=None):
+def main(args=None, watchdog_factory=None, loop=None):
     parser = get_parser()
 
-    loop = asyncio.get_event_loop()
+    if loop is None:
+        loop = asyncio.get_event_loop()
 
     config = Config(parser, args, loop)
 
