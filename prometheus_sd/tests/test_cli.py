@@ -9,7 +9,7 @@ async def watchdog(config):
     config.shutdown.set_result(True)
 
 
-async def test_main():
+def test_main():
     loop = asyncio.new_event_loop()
 
     ret = main(['--out', 'file.json'], watchdog_factory=watchdog, loop=loop)
@@ -17,7 +17,7 @@ async def test_main():
     assert ret == 0
 
 
-async def test_main_with_metrics():
+def test_main_with_metrics():
     loop = asyncio.new_event_loop()
 
     ret = main(['--out', 'file.json', '--metrics'], watchdog_factory=watchdog, loop=loop)
@@ -25,7 +25,7 @@ async def test_main_with_metrics():
     assert ret == 0
 
 
-async def test_main_invalid():
+def test_main_invalid():
     loop = asyncio.new_event_loop()
 
     ret = main(['--metrics'], watchdog_factory=watchdog, loop=loop)
@@ -40,7 +40,7 @@ async def watchdog_kill(config):
     config.shutdown.set_result(True)
 
 
-async def test_watchdog_kill():
+def test_watchdog_kill():
     loop = asyncio.new_event_loop()
 
     ret = main(['--metrics'], watchdog_factory=watchdog_kill, loop=loop)
