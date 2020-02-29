@@ -25,8 +25,15 @@ logger = logging.getLogger(__name__)
 
 docker_url = "unix:///var/run/docker.sock"
 
+
 class Config(object):
-    def __init__(self, parser, args=None, loop=None, docker_client=aiodocker.Docker):
+    def __init__(
+        self,
+        parser,
+        args=None,
+        loop=None,
+        docker_client=aiodocker.Docker
+    ):
         self.parser = parser
         self.docker_client = docker_client
 
@@ -34,7 +41,6 @@ class Config(object):
             loop = asyncio.get_event_loop()
 
         self.loop = loop
-
 
         self.call_args = args if args is not None else sys.argv[1:]
 

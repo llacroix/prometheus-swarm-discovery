@@ -11,7 +11,7 @@ from .utils import (
     extract_prometheus_labels,
     label_template,
     sanitize_label,
-    format_label
+    format_label,
 )
 
 from .metrics import (
@@ -43,16 +43,16 @@ class Target(object):
         if not self.container:
             return {}
 
-        labels = self.container._container['Config'].get('Labels', {})
-        return self.format_labels('container', labels)
+        labels = self.container._container["Config"].get("Labels", {})
+        return self.format_labels("container", labels)
 
     def get_task_labels(self):
         if not self.task:
             return {}
 
-        labels = self.task['Labels']
-        labels = self.format_labels('task', labels)
-        labels["%s_task_name"] = self.task['ID']
+        labels = self.task["Labels"]
+        labels = self.format_labels("task", labels)
+        labels["%s_task_name"] = self.task["ID"]
 
         return labels
 
@@ -61,7 +61,7 @@ class Target(object):
             return {}
 
         labels = self.service["Spec"]["Labels"]
-        return self.format_labels('service', labels)
+        return self.format_labels("service", labels)
 
     def clone(self):
         target = Target()
@@ -69,7 +69,7 @@ class Target(object):
         target.task = self.task
         target.service = self.service
         return target
-            
+
 
 def filter_tasks(tasks):
     """Filter tasks that seems impossible to parse further"""
@@ -83,8 +83,8 @@ def filter_tasks(tasks):
 def relabel_prometheus(job_config):
     """Get some prometheus configuration labels."""
     relabel = {
-        'path': '__metrics_path__',
-        'scheme': '__scheme__',
+        "path": "__metrics_path__",
+        "scheme": "__scheme__",
     }
 
     labels = {
@@ -94,8 +94,8 @@ def relabel_prometheus(job_config):
     }
 
     # parse __param_ parameters
-    for param, value  in job_config.get('params', {}).items():
-        labels['__param_%s' % (param,)] = value
+    for param, value in job_config.get("params", {}).items():
+        labels["__param_%s" % (param,)] = value
 
     return labels
 
@@ -118,15 +118,13 @@ async def get_containers_as_target(config, tasks):
 
 
 def get_hosts(prom_config, service):
-    hosts = prom_config.get('hosts', '')
+    hosts = prom_config.get("hosts", "")
 
     if hosts:
         target = Target()
         target.service = service
         target.hosts = [
-            host.strip()
-            for host in hosts.split(',')
-            if host.strip()
+            host.strip() for host in hosts.split(",") if host.strip()
         ]
         return [target]
     else:
@@ -144,7 +142,7 @@ def get_targets(prom_config, target_objects):
 
     One example would be to define target.get_context()
 
-    This methods return a correct context that can be used by the 
+    This methods return a correct context that can be used by the
     service discovery method:
 
     scrape_config = internal.parse_config(config, target.get_context())
@@ -179,13 +177,13 @@ def get_targets(prom_config, target_objects):
     targets = []
 
     networks_name = False
-    if prom_config.get('networks'):
-        networks_name = prom_config.get('networks').split(',')
+    if prom_config.get("networks"):
+        networks_name = prom_config.get("networks").split(",")
 
-    port = prom_config.get('port', '80')
+    port = prom_config.get("port", "80")
 
     def format_host(ip_address):
-        return "%s:%s" % (ip_address, port)    
+        return "%s:%s" % (ip_address, port)
 
     for target in target_objects:
         container = target.container
@@ -206,6 +204,7 @@ def get_targets(prom_config, target_objects):
             targets.append(new_target)
 
     return targets
+
 
 async def get_target_objects(config, service):
     """
@@ -237,7 +236,8 @@ async def load_service_configs(config, service):
 
     Each targets has a context built from the service and the target itself.
 
-    For example a target has get_context() which is target.context + target.service.context
+    For example a target has get_context() which is
+    target.context + target.service.context
     combined. The context could expose something like this:
 
     Swarm Mode:
@@ -276,30 +276,32 @@ async def load_service_configs(config, service):
 
     # Convert service labels to dict
     prom_labels = extract_prometheus_labels(service_labels)
-    prom_config = convert_labels_to_config(extract_prometheus_labels(service_labels))
-    prom_config = prom_config.get('prometheus')
+    prom_config = convert_labels_to_config(
+        extract_prometheus_labels(service_labels)
+    )
+    prom_config = prom_config.get("prometheus")
 
     # skip if disabled when enabled by default or
     # skip when not enabled by default and not enabled
     if (
-        (config.enabled_by_default and enabled_label == 'false') or
-        (not config.enabled_by_default and not enabled_label == 'true') or
-        enabled_label not in ['true', 'false', None]
+        (config.enabled_by_default and enabled_label == "false")
+        or (not config.enabled_by_default and not enabled_label == "true")
+        or enabled_label not in ["true", "false", None]
     ):
         return []
 
-    # TODO create tasks to load containers and gather 
+    # TODO create tasks to load containers and gather
     # valid results and ignore failed ones. It's possible that some
-    # container can die quickly and won't be available during the 
+    # container can die quickly and won't be available during the
     # second call it will prevent the service discovery from crashing
     # and having one container prevent the whole config to get built
 
     target_objects = await get_target_objects(config, service)
-    # In practice each service can declare multiple scrape jobs 
+    # In practice each service can declare multiple scrape jobs
     # by default it will uses the ip of the containers linked to
     # the service or use the host being defined on the job config
     # definition
-    # 
+    #
     # This enable setting configuration for services not hosted in
     # docker and have some configuration inside docker labels instead
     # of manually editing files.
@@ -308,39 +310,34 @@ async def load_service_configs(config, service):
     # Refactor to this:
 
     # Ideally the code should be strictly this:
-    # 
+    #
     # jobs = []
-    # 
+    #
     # for config in prom_config.get('jobs'):
     #     for target in service.get_targets(config):
     #         jobs.append(target.get_config())
-    # 
+    #
     # return jobs
-         
 
-    for job, job_config in prom_config.get('jobs', {}).items():
-        scrape_config = {
-            "labels": {
-                "job": job
-            }
-        }
+    for job, job_config in prom_config.get("jobs", {}).items():
+        scrape_config = {"labels": {"job": job}}
 
         # Get remapped labels like __scheme__ and __metrics_path__
         # could potentially handle params like __param_
-        scrape_config.get('labels').update(relabel_prometheus(job_config))
+        scrape_config.get("labels").update(relabel_prometheus(job_config))
         # Get all labels and apply to job labels
         job_labels = {
             sanitize_label(key): value
-            for key, value in job_config.get('labels', {}).items()
+            for key, value in job_config.get("labels", {}).items()
         }
-        scrape_config.get('labels').update(job_labels)
+        scrape_config.get("labels").update(job_labels)
 
         # TODO should be one method the if check should be part of the target
         # found. Remove the abstraction service/container/host|ips and only have
         # service / targets as the service could be a service or a container
         targets = (
             get_targets(job_config, target_objects)
-            if not job_config.get('hosts')
+            if not job_config.get("hosts")
             else get_hosts(job_config, service)
         )
 
@@ -351,17 +348,17 @@ async def load_service_configs(config, service):
         # TODO replace this code by target.get_config()
         for target in targets:
             new_scrape = scrape_config.copy()
-            new_scrape['labels'] = scrape_config['labels'].copy()
-            new_scrape['targets'] = target.hosts
+            new_scrape["labels"] = scrape_config["labels"].copy()
+            new_scrape["targets"] = target.hosts
 
-            # Load meta labels from container,task,service 
+            # Load meta labels from container,task,service
             if config.options.use_meta_labels:
                 if config.options.service_labels:
-                    new_scrape['labels'].update(target.get_service_labels())
+                    new_scrape["labels"].update(target.get_service_labels())
                 if config.options.task_labels:
-                    new_scrape['labels'].update(target.get_task_labels())
+                    new_scrape["labels"].update(target.get_task_labels())
                 if config.options.container_labels:
-                    new_scrape['labels'].update(target.get_container_labels())
+                    new_scrape["labels"].update(target.get_container_labels())
 
             jobs.append(new_scrape)
 
@@ -402,7 +399,7 @@ async def save_configs(config, sd_configs):
     async with AIOFile(config.options.out, "w") as afp:
         logger.debug(sd_configs)
         json_data = json.dumps(sd_configs)
-        file_size = len(json_data.encode('utf-8'))
+        file_size = len(json_data.encode("utf-8"))
         config_file_size.observe(file_size)
         await afp.write(json_data)
 
@@ -427,7 +424,9 @@ async def listen_events(config):
             if event["Type"] == "container" and event["status"] in states:
                 with build_duration.time():
                     configs = await load_existing_services(config)
-                save_config_task = config.loop.create_task(save_configs(config, configs))
+                save_config_task = config.loop.create_task(
+                    save_configs(config, configs)
+                )
                 done, pending = await asyncio.wait([save_config_task])
                 logger.debug("Save config and event tasks completed")
 
@@ -486,7 +485,6 @@ async def main_loop(config):
         done, pending = await asyncio.wait(
             [save_config_task, read_events_task]
         )
-
 
         reinit_counter.inc()
 

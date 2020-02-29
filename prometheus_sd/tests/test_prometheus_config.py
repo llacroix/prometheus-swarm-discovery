@@ -4,7 +4,6 @@ import pytest
 from prometheus_sd.service import relabel_prometheus
 
 
-
 def test_config_relabel():
     job_config = {
         "path": "/metrics2",

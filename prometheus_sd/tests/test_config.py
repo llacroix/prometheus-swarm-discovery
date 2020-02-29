@@ -15,32 +15,32 @@ class DockerClientMock(object):
         self.url = url
 
 
-def test_config_no_args():
+def test_config_no_args(loop):
     parser = get_parser()
-    config = Config(parser, [], DockerClientMock)
+    config = Config(parser, [], loop, DockerClientMock)
 
-    assert config.validate() == False
+    assert config.validate() is False
 
 
-def test_config_minimal():
+def test_config_minimal(loop):
     parser = get_parser()
-    config = Config(parser, ['--out', 'text.json'], DockerClientMock)
+    config = Config(parser, ['--out', 'text.json'], loop, DockerClientMock)
 
-    assert config.validate() == True
+    assert config.validate() is True
 
     config.init()
 
-    assert config.inited == True
+    assert config.inited is True
     assert config.get_client().url == docker_url
 
 
-def test_config_minimal_self_init():
+def test_config_minimal_self_init(loop):
     parser = get_parser()
-    config = Config(parser, ['--out', 'text.json'], DockerClientMock)
+    config = Config(parser, ['--out', 'text.json'], loop, DockerClientMock)
 
-    assert config.validate() == True
+    assert config.validate() is True
     assert config.get_client().url == docker_url
-    assert config.inited == True
+    assert config.inited is True
 
 
 def test_config_metrics_config():
@@ -57,7 +57,7 @@ def test_config_metrics_config():
     config = Config(parser, args, DockerClientMock)
     config.init()
 
-    assert config.options.metrics == True
+    assert config.options.metrics is True
     assert config.options.metrics_path == '/met'
     assert config.options.metrics_host == '0.0.0.0'
     assert config.options.metrics_port == 9191
@@ -69,31 +69,30 @@ def test_config_metrics_config():
     config = Config(parser, args, DockerClientMock)
     config.init()
 
-    assert config.options.metrics == False
+    assert config.options.metrics is False
     assert config.options.metrics_path == '/metrics'
     assert config.options.metrics_host == 'localhost'
     assert config.options.metrics_port == 9090
 
 
-def test_config_log_level_base():
+def test_config_log_level_base(loop):
     parser = get_parser()
     args = [
         '--out', 'text.json',
     ]
 
-    config = Config(parser, args, DockerClientMock)
+    config = Config(parser, args, loop, DockerClientMock)
     setup_logging(config)
     assert isinstance(config.log_handler, logging.StreamHandler)
 
 
-
-def test_config_log_level_base_file():
+def test_config_log_level_base_file(loop):
     parser = get_parser()
     args = [
         '--out', 'text.json',
         '--log-file', 'out.log',
     ]
 
-    config = Config(parser, args, DockerClientMock)
+    config = Config(parser, args, loop, DockerClientMock)
     setup_logging(config)
     assert isinstance(config.log_handler, logging.FileHandler)

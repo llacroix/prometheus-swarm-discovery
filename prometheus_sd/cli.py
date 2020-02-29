@@ -15,6 +15,7 @@ from .server import make_server
 
 logger = logging.getLogger(__name__)
 
+
 def main(args=None, watchdog_factory=None):
     parser = get_parser()
 

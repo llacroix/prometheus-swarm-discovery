@@ -33,6 +33,7 @@ async def watchdog_kill(config):
         task.cancel()
     config.shutdown.set_result(True)
 
+
 async def test_watchdog_kill():
     ret = main(['--metrics'], watchdog_factory=watchdog_kill)
-    assert ret == 0
+    assert ret == -1

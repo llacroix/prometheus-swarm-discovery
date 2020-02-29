@@ -8,9 +8,10 @@ from prometheus_sd.server import (
 from prometheus_sd.config import Config, get_parser
 from prometheus_sd.tests.test_config import DockerClientMock
 
+
 async def test_app_metrics(aiohttp_client, loop):
     parser = get_parser()
-    config = Config(parser, args=[])
+    config = Config(parser, [], loop)
     app = make_app(config)
 
     client = await aiohttp_client(app)
@@ -48,11 +49,11 @@ async def test_server_metrics(aiohttp_client, loop):
         '--metrics.host', '0.0.0.0'
     ]
 
-    config = Config(parser, args, DockerClientMock)
+    config = Config(parser, args, loop, DockerClientMock)
 
-    assert config.options.metrics == True
+    assert config.options.metrics is True
 
-    webserver = loop.create_task(make_server(config))
+    loop.create_task(make_server(config))
 
     async with aiohttp.ClientSession() as session:
         async with session.get('http://localhost:9090/metrics') as resp:
