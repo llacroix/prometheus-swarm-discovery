@@ -20,7 +20,7 @@ def main(args=None, watchdog_factory=None, loop=None):
     parser = get_parser()
 
     if loop is None:
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
 
     config = Config(parser, args, loop)
 
