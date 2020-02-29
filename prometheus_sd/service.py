@@ -472,12 +472,16 @@ async def main_loop(config):
 
     config.init()
 
+    async def await_shutdown():
+        await config.shutdown
+
     while True:
         if reinit_count > 0:
             logger.info("Reinit mainloop %d" % (reinit_count))
 
         save_config_task = loop.create_task(save_all_configs(config))
         read_events_task = loop.create_task(listen_events(config))
+        await_shutdown  = loop.create_task(await_shutdown)
 
         # TODO check if all done tasks are completed with errors or not
         # In theory it should always return in errors so make sure we don't miss
@@ -485,6 +489,11 @@ async def main_loop(config):
         done, pending = await asyncio.wait(
             [save_config_task, read_events_task]
         )
+
+        try:
+            config.shutdown.result()
+        except asyncio.InvalidStateError:
+            break
 
         reinit_counter.inc()
 

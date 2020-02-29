@@ -6,6 +6,7 @@ from prometheus_sd.cli import main
 
 async def watchdog(config):
     await asyncio.sleep(1)
+    print("Shutdown")
     config.shutdown.set_result(True)
 
 
