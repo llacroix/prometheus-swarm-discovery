@@ -43,6 +43,11 @@ async def watchdog_kill(config):
 def test_watchdog_kill():
     loop = asyncio.new_event_loop()
 
-    ret = main(['--metrics'], watchdog_factory=watchdog_kill, loop=loop)
+    ret = main(['--out', 'file.json', '--metrics'], watchdog_factory=watchdog_kill, loop=loop)
+
+    assert ret == -1
+
+def test_watchdog_kill_default_loop():
+    ret = main(['--out', 'file.json', '--metrics'], watchdog_factory=watchdog_kill)
 
     assert ret == -1
