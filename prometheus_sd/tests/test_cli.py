@@ -36,7 +36,7 @@ def test_main_invalid():
 
 async def watchdog_kill(config):
     for task in config.tasks:
-        task.cancel()
+        task[1].cancel()
 
     config.shutdown.set_result(True)
 
@@ -46,9 +46,9 @@ def test_watchdog_kill():
 
     ret = main(['--out', 'file.json', '--metrics'], watchdog_factory=watchdog_kill, loop=loop)
 
-    assert ret == -1
+    assert ret == 0
 
 def test_watchdog_kill_default_loop():
     ret = main(['--out', 'file.json', '--metrics'], watchdog_factory=watchdog_kill)
 
-    assert ret == -1
+    assert ret == 0
